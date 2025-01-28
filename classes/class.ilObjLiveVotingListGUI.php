@@ -97,6 +97,7 @@ class ilObjLiveVotingListGUI extends ilObjectPluginListGUI
 
         $mode = match ($mode) {
             LiveVotingMode::CHALLENGE_MODE => $this->txt("xlvo_mode_challenge"),
+            LiveVotingMode::TRANSFER_MODE => $this->txt("xlvo_mode_transfer"),
             default => $this->txt("xlvo_mode_basic"),
         };
 

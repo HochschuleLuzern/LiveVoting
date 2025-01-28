@@ -21,23 +21,23 @@ declare(strict_types=1);
 namespace LiveVoting\objects\modes;
 
 /**
- * Class LiveVotingChallengeMode
+ * Class LiveVotingTransferMode
  * @authors Jesús Copado, Daniel Cazalla, Saúl Díaz, Juan Aguilar <info@surlabs.es>
  */
-class LiveVotingChallengeMode extends LiveVotingMode
+class LiveVotingTransferMode extends LiveVotingMode
 {
     public function getMode(): int
     {
-        return self::CHALLENGE_MODE;
+        return self::TRANSFER_MODE;
     }
 
     public function getStartTemplate(): string
     {
-        return "startChallenge";
+        return "start";
     }
 
     public function getInnerTemplate(): string
     {
-        return "inner_screen_challenge";
+        return "inner_screen";
     }
 }

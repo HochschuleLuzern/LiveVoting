@@ -811,3 +811,36 @@ if (!$db->tableExists("xlvo_points")) {
     $db->addPrimaryKey("xlvo_points", ["identifier", "obj_id", "voting_id", "round_id"]);
 }
 ?>
+<#46>
+<?php
+global $DIC;
+$db = $DIC->database();
+
+if (!$db->tableExists("xlvo_codes")) {
+    $fields = [
+        "obj_id" => [
+            "type" => "integer",
+            "length" => 8,
+            "notnull" => false
+        ],
+        "code" => [
+            "type" => "text",
+            "length" => 256,
+            "notnull" => true
+        ],
+        "used" => [
+            "type" => "integer",
+            "length" => 4,
+            "notnull" => false
+        ],
+        "value" => [
+            "type" => "integer",
+            "length" => 8,
+            "notnull" => true
+        ]
+    ];
+
+    $db->createTable("xlvo_codes", $fields);
+    $db->addPrimaryKey("xlvo_codes", ["obj_id", "code"]);
+}
+?>

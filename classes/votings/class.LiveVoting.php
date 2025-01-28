@@ -79,6 +79,7 @@ class LiveVoting
     private bool $nicknames = false;
     private bool $scoreboard = false;
     private LiveVotingPlayer $player;
+    private array $codes = [];
 
     /**
      * LiveVoting constructor.
@@ -588,5 +589,79 @@ class LiveVoting
         }
 
         return -1;
+    }
+
+    /**
+     * @throws LiveVotingException
+     */
+    public function loadCodes(): void
+    {
+        $database = new LiveVotingDatabase();
+
+        $this->codes = $database->select("xlvo_codes", ["obj_id" => $this->getId()]);
+    }
+
+    public function getCodes(): array
+    {
+        return $this->codes;
+    }
+
+    /**
+     * @throws LiveVotingException
+     */
+    public function clearCodes(): void
+    {
+        $database = new LiveVotingDatabase();
+
+        $database->delete("xlvo_codes", ["obj_id" => $this->getId()]);
+
+        $this->codes = [];
+    }
+
+    /**
+     * @throws LiveVotingException
+     */
+    public function generateCodes(int $count): array
+    {
+        $codes = [];
+
+        $database = new LiveVotingDatabase();
+
+        for ($i = 0; $i < $count; $i++) {
+            $code = LiveVoting::generateCode(4);
+
+            while (in_array($code, $codes)) {
+                $code = LiveVoting::generateCode(4);
+            }
+
+            $codes[] = $code;
+
+            $this->codes[] = $code;
+
+            $database->insert("xlvo_codes", [
+                "obj_id" => $this->getId(),
+                "code" => $code,
+                "used" => 0,
+                "value" => 1
+            ]);
+        }
+
+        return $codes;
+    }
+
+    /**
+     * @throws LiveVotingException
+     */
+    public function updateCode(string $code, int $value): void
+    {
+        $database = new LiveVotingDatabase();
+
+        $database->update("xlvo_codes", ["value" => $value], ["code" => $code]);
+
+        foreach ($this->codes as $key => $c) {
+            if ($c["code"] === $code) {
+                $this->codes[$key]["value"] = $value;
+            }
+        }
     }
 }

@@ -30,6 +30,7 @@ abstract class LiveVotingMode
 {
     const BASIC_MODE = 0;
     const CHALLENGE_MODE = 1;
+    const TRANSFER_MODE = 2;
 
     /**
      * @throws LiveVotingException
@@ -39,6 +40,7 @@ abstract class LiveVotingMode
         return match ($mode) {
             self::BASIC_MODE => new LiveVotingBasicMode(),
             self::CHALLENGE_MODE => new LiveVotingChallengeMode(),
+            self::TRANSFER_MODE => new LiveVotingTransferMode(),
             default => throw new LiveVotingException('Invalid mode'),
         };
     }

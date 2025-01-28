@@ -31,6 +31,7 @@ use LiveVoting\questions\LiveVotingQuestion;
 use LiveVoting\UI\LiveVotingChoicesUI;
 use LiveVoting\UI\LiveVotingCorrectOrderUI;
 use LiveVoting\UI\LiveVotingFreeInputUI;
+use LiveVoting\UI\LiveVotingCodesUI;
 use LiveVoting\UI\LiveVotingManageUI;
 use LiveVoting\UI\LiveVotingPrioritiesUI;
 use LiveVoting\UI\LiveVotingRangeUI;
@@ -105,6 +106,10 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
             case 'removeVoter':
             case 'manage':
             case 'results':
+            case 'codes':
+            case 'generateCodes':
+            case 'clearCodes':
+            case 'editCode':
             case 'selectType':
             case 'selectedChoices':
             case 'selectedFreeInput':
@@ -200,6 +205,82 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
             $liveVotingResultsUI = new LiveVotingResultsUI($this->object->getLiveVoting());
             $this->tpl->setContent($liveVotingResultsUI->showResults($this));
         }
+    }
+
+    /**
+     * @throws ilCtrlException
+     * @throws LiveVotingException
+     * @throws ilException
+     */
+    public function codes(): void
+    {
+        $this->tabs->activateTab("tab_codes");
+
+        if (!ilObjLiveVotingAccess::hasWriteAccess()) {
+            $this->tpl->setContent($this->renderer->render($this->factory->messageBox()->failure($this->plugin->txt("permission_denied"))));
+        } else {
+            $liveVotingCodesUI = new LiveVotingCodesUI($this->object->getLiveVoting());
+            $this->tpl->setContent($liveVotingCodesUI->showCodes($this));
+        }
+    }
+
+    /**
+     * @throws ilCtrlException
+     * @throws LiveVotingException
+     * @throws ilException
+     */
+    public function generateCodes(): void
+    {
+        global $DIC;
+
+        if (isset($_POST["number"])) {
+            $this->object->getLiveVoting()->generateCodes((int) $_POST["number"]);
+
+            $DIC->ui()->mainTemplate()->setOnScreenMessage("success", $this->txt('codes_generated'), true);
+        }
+
+        $this->codes();
+    }
+
+    /**
+     * @throws ilCtrlException
+     * @throws LiveVotingException
+     * @throws ilException
+     */
+    public function clearCodes(): void
+    {
+        global $DIC;
+
+        $this->object->getLiveVoting()->clearCodes();
+
+        $DIC->ui()->mainTemplate()->setOnScreenMessage("success", $this->txt('codes_cleared'), true);
+
+        $this->codes();
+    }
+
+    /**
+     * @throws ilCtrlException
+     * @throws LiveVotingException
+     * @throws ilException
+     */
+    public function editCode(): void
+    {
+        global $DIC;
+
+        $form = LiveVotingCodesUI::buildEditCodeForm();
+
+        $form = $form->withRequest($DIC->http()->request());
+
+        $data = $form->getData();
+
+        if (isset($data['code']) && isset($data['votes'])) {
+            $this->object->getLiveVoting()->updateCode($data['code'], $data['votes']);
+            $DIC->ui()->mainTemplate()->setOnScreenMessage("success", $this->txt('code_updated'), true);
+        } else {
+            $DIC->ui()->mainTemplate()->setOnScreenMessage("failure", $this->txt('code_not_updated'), true);
+        }
+
+        $this->codes();
     }
 
     /**
@@ -391,6 +472,11 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
             $this->tabs->addTab("tab_content", $this->lng->txt("tab_content"), $this->ctrl->getLinkTarget($this, "index"));
             $this->tabs->addTab("tab_manage", $this->plugin->txt("tab_manage"), $this->ctrl->getLinkTarget($this, "manage"));
             $this->tabs->addTab("tab_results", $this->plugin->txt("tab_results"), $this->ctrl->getLinkTarget($this, "results"));
+
+            if ($this->object->getLiveVoting()->getMode()->getMode() == LiveVotingMode::TRANSFER_MODE) {
+                $this->tabs->addTab("tab_codes", $this->plugin->txt("tab_codes"), $this->ctrl->getLinkTarget($this, "codes"));
+            }
+
             $this->tabs->addTab("info_short", $this->lng->txt('info_short'), $this->ctrl->getLinkTargetByClass(array(
                 get_class($this),
                 "ilInfoScreenGUI",
@@ -1364,6 +1450,7 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
         $mode = new ilRadioGroupInputGUI($this->plugin->txt('xlvo_mode'), 'xlvo_mode');
         $mode->addOption(new ilRadioOption($this->plugin->txt('xlvo_mode_basic'), (string) LiveVotingMode::BASIC_MODE, $this->plugin->txt('xlvo_mode_basic_info')));
         $mode->addOption(new ilRadioOption($this->plugin->txt('xlvo_mode_challenge'), (string) LiveVotingMode::CHALLENGE_MODE, $this->plugin->txt('xlvo_mode_challenge_info')));
+        $mode->addOption(new ilRadioOption($this->plugin->txt('xlvo_mode_transfer'), (string) LiveVotingMode::TRANSFER_MODE, $this->plugin->txt('xlvo_mode_transfer_info')));
 
         $mode->setRequired(true);
 

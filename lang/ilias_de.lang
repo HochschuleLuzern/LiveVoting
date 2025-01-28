@@ -333,3 +333,17 @@ voting_score_info#:#Die Punktzahl der Frage, um die maximale Punktzahl zu erreic
 voter_header_scoreboard#:#Scoreboard
 voting_countdown#:#Zeit bis zur Antwort
 voting_countdown_info#:#Zeit bis zur Beantwortung der Frage, dies wirkt sich auch auf die Punktzahl der Frage aus
+xlvo_mode_transfer#:#Transfer
+xlvo_mode_transfer_info#:#Mit dem Transfersmodus können die Teilnehmer ihre Stimme an eine andere Person delegieren.
+tab_codes#:#Codes
+number_of_codes#:#Anzahl der Codes
+generate_codes#:#Codes generieren
+clear_codes#:#Codes löschen
+codes_table_code#:#Code
+codes_table_used#:#Used
+codes_table_votes#:#Stimmen
+codes_cleared#:#Codes wurden gelöscht
+codes_generated#:#Codes wurden generiert
+edit_code#:#Code bearbeiten
+code_updated#:#Code wurde aktualisiert
+code_not_updated#:#Code konnte nicht aktualisiert werden

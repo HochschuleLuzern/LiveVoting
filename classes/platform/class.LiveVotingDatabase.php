@@ -42,6 +42,7 @@ class LiveVotingDatabase {
         "xlvo_voter",
         "xlvo_nicknames",
         "xlvo_points",
+        "xlvo_codes"
     );
 
     public function __construct()
