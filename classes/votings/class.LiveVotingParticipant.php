@@ -33,6 +33,7 @@ class LiveVotingParticipant
     protected $type = 1;
     protected $identifier = '';
     protected $nickname = '';
+    protected $code = '';
 
     public static function getInstance(): LiveVotingParticipant
     {
@@ -159,5 +160,39 @@ class LiveVotingParticipant
         ]);
 
         return $this;
+    }
+
+    /**
+     * @throws LiveVotingException
+     */
+    public function getCode(string $obj_id): string
+    {
+        $database = new LiveVotingDatabase();
+
+        $result = $database->select("xlvo_codes", [
+            'obj_id' => $obj_id,
+            'used' => $this->getIdentifier()
+        ], ['code']);
+
+        if (!empty($result)) {
+            return $result[0]['code'] ?? '';
+        }
+
+        return '';
+    }
+
+    /**
+     * @throws LiveVotingException
+     */
+    public function setCode(string $obj_id, string $code): void
+    {
+        $database = new LiveVotingDatabase();
+
+        $database->update('xlvo_codes', [
+            'used' => $this->getIdentifier()
+        ], [
+            'obj_id' => $obj_id,
+            'code' => $code
+        ]);
     }
 }

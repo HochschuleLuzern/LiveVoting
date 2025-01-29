@@ -59,8 +59,6 @@ class LiveVotingCodesUI
 
         $codes_data = new LiveVotingCodesTable();
 
-        $this->liveVoting->loadCodes();
-
         $codes = $this->liveVoting->getCodes();
 
         foreach ($codes as $key => $code) {

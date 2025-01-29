@@ -601,8 +601,13 @@ class LiveVoting
         $this->codes = $database->select("xlvo_codes", ["obj_id" => $this->getId()]);
     }
 
+    /**
+     * @throws LiveVotingException
+     */
     public function getCodes(): array
     {
+        $this->loadCodes();
+
         return $this->codes;
     }
 
@@ -663,5 +668,21 @@ class LiveVoting
                 $this->codes[$key]["value"] = $value;
             }
         }
+    }
+
+    /**
+     * @throws LiveVotingException
+     */
+    public function validateCode(string $code, string $identifier): bool
+    {
+        $this->loadCodes();
+
+        foreach ($this->codes as $c) {
+            if ($c["code"] === $code && ($c["used"] == "0") || $c["used"] == $identifier) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

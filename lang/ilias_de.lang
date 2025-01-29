@@ -347,3 +347,4 @@ codes_generated#:#Codes wurden generiert
 edit_code#:#Code bearbeiten
 code_updated#:#Code wurde aktualisiert
 code_not_updated#:#Code konnte nicht aktualisiert werden
+code_invalid#:#Code is invalid or already used

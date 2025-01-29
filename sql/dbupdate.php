@@ -829,8 +829,8 @@ if (!$db->tableExists("xlvo_codes")) {
             "notnull" => true
         ],
         "used" => [
-            "type" => "integer",
-            "length" => 4,
+            "type" => "text",
+            "length" => 256,
             "notnull" => false
         ],
         "value" => [

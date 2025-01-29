@@ -19,6 +19,7 @@ declare(strict_types=1);
  *
  */
 
+use ILIAS\UI\Component\Input\Container\Form\Standard;
 use LiveVoting\platform\LiveVotingConfig;
 use LiveVoting\platform\LiveVotingException;
 use LiveVoting\Utils\LiveVotingJs;
@@ -117,6 +118,12 @@ class LiveVotingPlayerGUI
         if ($this->live_voting->getMode()->getMode() == LiveVotingMode::CHALLENGE_MODE) {
             if ($this->live_voting->isNicknames() && LiveVotingParticipant::getInstance()->getNickname($player->getId()) == "") {
                 $DIC->ctrl()->redirectByClass(["ilUIPluginRouterGUI", "LiveVotingPlayerGUI"], 'requestNickname');
+            }
+        }
+
+        if ($this->live_voting->getMode()->getMode() == LiveVotingMode::TRANSFER_MODE) {
+            if (LiveVotingParticipant::getInstance()->getCode((string) $this->live_voting->getId()) == "") {
+                $DIC->ctrl()->redirectByClass(["ilUIPluginRouterGUI", "LiveVotingPlayerGUI"], 'requestCode');
             }
         }
 
@@ -428,6 +435,66 @@ class LiveVotingPlayerGUI
         LiveVotingParticipant::getInstance()->setNickname($nickname, $this->live_voting->getPlayer()->getId());
 
         $DIC->ctrl()->redirect($this, 'startVoterPlayer');
+    }
+
+    /**
+     * @throws ilCtrlException
+     * @throws ilSystemStyleException
+     * @throws ilTemplateException
+     * @throws LiveVotingException
+     */
+    protected function requestCode(): void
+    {
+        global $DIC;
+
+        $form = $this->buildCodeForm();
+
+        if ($DIC->http()->request()->getMethod() == 'POST') {
+            $form = $form->withRequest($DIC->http()->request());
+
+            $result = $form->getData();
+            if (isset($result['code'])) {
+                if ($this->live_voting->validateCode($result['code'], LiveVotingParticipant::getInstance()->getIdentifier())) {
+                    LiveVotingParticipant::getInstance()->setCode((string) $this->live_voting->getId(), $result['code']);
+
+                    $DIC->ctrl()->redirect($this, 'startVoterPlayer');
+
+                    return;
+                } else {
+                    $DIC->ui()->mainTemplate()->setOnScreenMessage("failure", $this->txt('code_invalid'));
+                }
+            }
+        }
+
+        $tpl = new ilTemplate(ilLiveVotingPlugin::getInstance()->getDirectory() . '/templates/default/Voter/tpl.code.html', true, false);
+        $DIC->ui()->mainTemplate()->addCss(ilLiveVotingPlugin::getInstance()->getDirectory() . '/templates/default/Voter/pin.css'); // Por ahora usamos el mismo css que el de pin
+
+        $tpl->setVariable('TITLE', $this->txt('player_start_voting'));
+        $tpl->setVariable('FORM', $DIC->ui()->renderer()->render($form));
+
+
+        $this->setVoterPlayerTemplate($tpl);
+
+        $this->prepareFrameworkTemplate();
+        $this->setVoterPlayerTemplate($tpl);
+
+        $this->showVotingTemplate();
+
+    }
+
+    /**
+     * @throws ilCtrlException
+     */
+    private function buildCodeForm(): Standard
+    {
+        global $DIC;
+
+        $inputs = [
+            'code' => $DIC->ui()->factory()->input()->field()->text($this->txt('codes_table_code'))->withRequired(true)
+        ];
+
+        return $DIC->ui()->factory()->input()->container()->form()->standard($DIC->ctrl()->getFormAction($this, 'requestCode'), $inputs);
+
     }
 
     /**
