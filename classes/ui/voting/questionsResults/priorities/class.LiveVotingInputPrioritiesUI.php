@@ -40,7 +40,7 @@ class LiveVotingInputPrioritiesUI extends LiveVotingInputCorrectOrderUI
     public function getHTML(): string
     {
         $bars = new LiveVotingBarCollectionUI();
-        $total_voters = LiveVotingVote::countVoters($this->player->getActiveVoting(), $this->player->getRoundId());
+        $total_voters = LiveVotingVote::countVotersWithMult($this->player->getActiveVoting(), $this->player->getRoundId());
         $bars->setTotalVoters($total_voters);
         $bars->setShowTotalVoters(false);
         $bars->setTotalVotes($total_voters);
@@ -50,12 +50,27 @@ class LiveVotingInputPrioritiesUI extends LiveVotingInputCorrectOrderUI
         $option_weight = array();
 
         foreach (LiveVotingVote::getVotesOfQuestion($this->player->getActiveVoting(), $this->player->getRoundId()) as $xlvoVote) {
-            $option_amount2 = $option_amount;
-            $json_decode = json_decode($xlvoVote->getFreeInput(), true);
-            if (is_array($json_decode)) {
-                foreach ($json_decode as $option_id) {
-                    $option_weight[$option_id] = (array_key_exists($option_id, $option_weight) ? $option_weight[$option_id] : 0) + $option_amount2;
-                    $option_amount2--;
+            $mult = $xlvoVote->getMult();
+
+            if ($mult > 1) {
+                for ($i = 0; $i < $mult; $i++) {
+                    $option_amount2 = $option_amount;
+                    $json_decode = json_decode($xlvoVote->getFreeInput(), true);
+                    if (is_array($json_decode)) {
+                        foreach ($json_decode as $option_id) {
+                            $option_weight[$option_id] = (array_key_exists($option_id, $option_weight) ? $option_weight[$option_id] : 0) + $option_amount2;
+                            $option_amount2--;
+                        }
+                    }
+                }
+            } else {
+                $option_amount2 = $option_amount;
+                $json_decode = json_decode($xlvoVote->getFreeInput(), true);
+                if (is_array($json_decode)) {
+                    foreach ($json_decode as $option_id) {
+                        $option_weight[$option_id] = (array_key_exists($option_id, $option_weight) ? $option_weight[$option_id] : 0) + $option_amount2;
+                        $option_amount2--;
+                    }
                 }
             }
         }

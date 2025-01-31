@@ -89,6 +89,8 @@ class LiveVotingResultsTableGUI extends ilTable2GUI
         }
         if ($this->parent_obj->getObject()->getLiveVoting()->getMode()->getMode() == LiveVotingMode::CHALLENGE_MODE) {
             $this->addColumn(ilLiveVotingPlugin::getInstance()->txt('common_points'), 'points', 'auto');
+        } elseif ($this->parent_obj->getObject()->getLiveVoting()->getMode()->getMode() == LiveVotingMode::TRANSFER_MODE) {
+            $this->addColumn(ilLiveVotingPlugin::getInstance()->txt('codes_table_votes'), 'votes', 'auto');
         }
     }
 
@@ -138,7 +140,8 @@ class LiveVotingResultsTableGUI extends ilTable2GUI
                     "voting_id" => $question->getId(),
                     "round_id" => $round_id,
                     "id" => $vote->getId(),
-                    "points" => LiveVotingPlayer::getPlayerPoints($vote->getUserIdType() == 1 ? $vote->getUserId() : $vote->getUserIdentifier(), $obj_id, $question->getId(), $round_id)
+                    "points" => LiveVotingPlayer::getPlayerPoints($vote->getUserIdType() == 1 ? $vote->getUserId() : $vote->getUserIdentifier(), $obj_id, $question->getId(), $round_id),
+                    "votes" => $vote->getMult()
                 );
             }
         }
@@ -162,7 +165,9 @@ class LiveVotingResultsTableGUI extends ilTable2GUI
         $this->tpl->setVariable("TITLE", $this->shorten($a_set['title']));
         $this->tpl->setVariable("ANSWER", $this->shorten($a_set['answer'], 100));
         if ($this->parent_obj->getObject()->getLiveVoting()->getMode()->getMode() == LiveVotingMode::CHALLENGE_MODE) {
-            $this->tpl->setVariable("POINTS", $a_set['points']);
+            $this->tpl->setVariable("EXTRA", "<td class='std small {CSS_ROW}'>{$a_set['points']}</td>");
+        }elseif ($this->parent_obj->getObject()->getLiveVoting()->getMode()->getMode() == LiveVotingMode::TRANSFER_MODE) {
+            $this->tpl->setVariable("EXTRA", "<td class='std small {CSS_ROW}'>{$a_set['votes']}</td>");
         }
         if ($this->isShowHistory()) {
             $this->tpl->setVariable("ACTION", ilLiveVotingPlugin::getInstance()->txt("common_show_history"));

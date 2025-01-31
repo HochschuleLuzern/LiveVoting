@@ -616,4 +616,68 @@ class LiveVotingVote
     {
         return self::countVotes($voting_id, $round_id) > 0;
     }
+
+
+    public static function countVotesWithMult(int $voting_id, int $round_id): int
+    {
+        $database = new LiveVotingDatabase();
+
+        $result = $database->select("rep_robj_xlvo_vote_n", array(
+            "voting_id" => $voting_id,
+            "status" => 1,
+            "round_id" => $round_id
+        ), ["mult"]);
+
+        $count = 0;
+
+        foreach ($result as $vote) {
+            $mult = $vote["mult"];
+
+            if ($mult < 1) {
+                $mult = 1;
+            }
+
+            $count += $mult;
+        }
+
+        return $count;
+    }
+
+    /**
+     * @throws LiveVotingException
+     */
+    public static function countVotersWithMult(int $voting_id, int $round_id): int
+    {
+        $database = new LiveVotingDatabase();
+
+        $result = $database->select("rep_robj_xlvo_vote_n", array(
+            "voting_id" => $voting_id,
+            "status" => 1,
+            "round_id" => $round_id
+        ), ["user_id_type", "user_identifier", "user_id", "mult"]);
+
+        $count = array();
+
+        foreach ($result as $vote) {
+            $mult = $vote["mult"];
+
+            if ($mult < 1) {
+                $mult = 1;
+            }
+
+            $id = $vote["user_id_type"] . "_" . $vote["user_identifier"] . "_" . $vote["user_id"];
+
+            if (!isset($count[$id]) || $count[$id] < $mult) {
+                $count[$id] = $mult;
+            }
+        }
+
+        $total = 0;
+
+        foreach ($count as $c) {
+            $total += $c;
+        }
+
+        return $total;
+    }
 }

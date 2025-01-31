@@ -99,7 +99,7 @@ class LiveVotingInputNumberRangeUI extends LiveVotingInputResultsGUI
     private function renderGroupedTextResultWithInfo(): string
     {
         $votes = LiveVotingVote::getVotesOfQuestion($this->player->getActiveVoting(), $this->player->getRoundId());
-        $vote_count = LiveVotingVote::countVotes($this->player->getActiveVoting(), $this->player->getRoundId());
+        $vote_count = LiveVotingVote::countVotesWithMult($this->player->getActiveVoting(), $this->player->getRoundId());
 
         $vote_sum = 0;
         $values = [];
@@ -237,7 +237,14 @@ class LiveVotingInputNumberRangeUI extends LiveVotingInputResultsGUI
          */
         foreach ($votes as $vote) {
             $value = (int)$vote->getFreeInput();
-            $values[$value]++;
+
+            $mult = $vote->getMult();
+
+            if ($mult < 1) {
+                $mult = 1;
+            }
+
+            $values[$value] += $mult;
         }
 
         //Create 10 slices and sum each slice
