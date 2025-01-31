@@ -1297,6 +1297,7 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
                 $vote->setStatus(1);
                 $vote->setFreeInput($_POST['input']);
                 $vote->setRoundId(LiveVotingRound::getLatestRoundId($liveVoting->getId()));
+                $vote->setMult($user->getMult((string) $liveVoting->getId()));
                 $vote->save();
 
                 $return_value = ['vote_id' => $vote->getId()];

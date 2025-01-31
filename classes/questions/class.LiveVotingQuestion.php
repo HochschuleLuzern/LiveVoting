@@ -74,6 +74,21 @@ abstract class LiveVotingQuestion
         }
     }
 
+    public static function getObjIdFromVotingId(int $voting_id): int
+    {
+        $database = new LiveVotingDatabase();
+
+        $result = $database->select("rep_robj_xlvo_voting_n", array(
+            "id" => $voting_id
+        ), ["obj_id"]);
+
+        if (isset($result[0])) {
+            return (int)$result[0]["obj_id"];
+        }
+
+        return 0;
+    }
+
     public abstract function getQuestionType(): string;
 
     public function getQuestionTypeId(): int

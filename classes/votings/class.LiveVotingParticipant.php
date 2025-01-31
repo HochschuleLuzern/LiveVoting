@@ -195,4 +195,23 @@ class LiveVotingParticipant
             'code' => $code
         ]);
     }
+
+    /**
+     * @throws LiveVotingException
+     */
+    public function getMult(string $obj_id): int
+    {
+        $database = new LiveVotingDatabase();
+
+        $result = $database->select("xlvo_codes", [
+            'obj_id' => $obj_id,
+            'used' => $this->getIdentifier()
+        ], ['value']);
+
+        if (!empty($result)) {
+            return (int) $result[0]['value'] ?? 1;
+        }
+
+        return 1;
+    }
 }

@@ -794,6 +794,7 @@ class LiveVotingPlayer
             $vote->setStatus(1);
             $vote->setFreeInput($item['input']);
             $vote->setRoundId(LiveVotingRound::getLatestRoundId($liveVotingConfig->getId()));
+            $vote->setMult($user->getMult((string) $liveVotingConfig->getId()));
             $vote->save();
             if ($this->getActiveVotingObject()->getQuestionType() == "FreeText" && !$this->getActiveVotingObject()->isMultiFreeInput()) {
                 $this->unvoteAll($vote->getId());

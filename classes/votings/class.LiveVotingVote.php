@@ -47,6 +47,7 @@ class LiveVotingVote
     private int $round_id = 0;
     private ?string $free_input = null;
     private int $free_input_category = 0;
+    private int $mult = 0;
 
     /**
      * @throws LiveVotingException
@@ -180,6 +181,16 @@ class LiveVotingVote
         $this->free_input_category = $free_input_category;
     }
 
+    public function getMult(): int
+    {
+        return $this->mult;
+    }
+
+    public function setMult(int $mult): void
+    {
+        $this->mult = $mult;
+    }
+
     /**
      * @throws LiveVotingException
      * @throws Exception
@@ -202,7 +213,8 @@ class LiveVotingVote
                 "last_update" => $this->last_update,
                 "round_id" => $this->round_id,
                 "free_input" => $this->free_input,
-                "free_input_category" => $this->free_input_category
+                "free_input_category" => $this->free_input_category,
+                "mult" => $this->mult
             ), array(
                 "id" => $this->id
             ));
@@ -221,7 +233,8 @@ class LiveVotingVote
                 "last_update" => $this->last_update,
                 "round_id" => $this->round_id,
                 "free_input" => $this->free_input,
-                "free_input_category" => $this->free_input_category
+                "free_input_category" => $this->free_input_category,
+                "mult" => $this->mult
             ));
         }
 
@@ -253,6 +266,7 @@ class LiveVotingVote
             $this->setRoundId((int)$result[0]["round_id"]);
             $this->setFreeInput($result[0]["free_input"]);
             $this->setFreeInputCategory((int)$result[0]["free_input_category"]);
+            $this->setMult((int)$result[0]["mult"]);
         }
     }
 
@@ -444,6 +458,7 @@ class LiveVotingVote
 
         $vote->setOptionId($option_id);
         $vote->setVotingId($voting_id);
+        $vote->setMult($participant->getMult((string) LiveVotingQuestion::getObjIdFromVotingId($voting_id)));
 
         return $vote;
     }

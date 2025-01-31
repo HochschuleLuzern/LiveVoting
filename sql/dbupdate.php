@@ -843,4 +843,12 @@ if (!$db->tableExists("xlvo_codes")) {
     $db->createTable("xlvo_codes", $fields);
     $db->addPrimaryKey("xlvo_codes", ["obj_id", "code"]);
 }
+
+if ($db->tableExists("rep_robj_xlvo_vote_n")) {
+    $db->addTableColumn("rep_robj_xlvo_vote_n", "mult", [
+        "type" => "integer",
+        "length" => 256,
+        "notnull" => false
+    ]);
+}
 ?>
