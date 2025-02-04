@@ -343,9 +343,12 @@ clear_codes#:#Clear codes
 codes_table_code#:#Code
 codes_table_used#:#Used
 codes_table_votes#:#Votes
+codes_table_user#:#User
 codes_cleared#:#Codes have been cleared
 codes_generated#:#Codes have been generated
 edit_code#:#Edit code
 code_updated#:#Code has been updated
 code_not_updated#:#Code could not be updated
 code_invalid#:#Code is invalid or already used
+codes_table_votes_info#:#Number of votes for this code
+codes_table_user_info#:#Only the user who can use this code. Note: Only available with non-anonymous LiveVotings

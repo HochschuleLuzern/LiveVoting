@@ -19,6 +19,11 @@ declare(strict_types=1);
  *
  */
 
+use ILIAS\Filesystem\Stream\Streams;
+use ILIAS\HTTP\Response\ResponseHeader;
+use ILIAS\HTTP\Response\Sender\ResponseSendingException;
+use ILIAS\HTTP\Services;
+use ILIAS\Refinery\Transformation;
 use ILIAS\UI\Factory;
 use ILIAS\UI\Renderer;
 use LiveVoting\legacy\LiveVotingResultsTableGUI;
@@ -60,6 +65,7 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
 {
     private Factory $factory;
     private Renderer $renderer;
+    private Services $http;
 
     public function __construct(int $a_ref_id = 0, int $a_id_type = self::REPOSITORY_NODE_ID, int $a_parent_node_id = 0)
     {
@@ -69,6 +75,9 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
 
         $this->factory = $DIC->ui()->factory();
         $this->renderer = $DIC->ui()->renderer();
+        $this->http = $DIC->http();
+        $this->refinery = $DIC->refinery();
+        $this->user = $DIC->user();
     }
 
     public function getType(): string
@@ -110,6 +119,7 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
             case 'generateCodes':
             case 'clearCodes':
             case 'editCode':
+            case 'doAutoCompleteUser':
             case 'selectType':
             case 'selectedChoices':
             case 'selectedFreeInput':
@@ -274,7 +284,7 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
         $data = $form->getData();
 
         if (isset($data['code']) && isset($data['votes'])) {
-            $this->object->getLiveVoting()->updateCode($data['code'], $data['votes']);
+            $this->object->getLiveVoting()->updateCode($data['code'], $data['votes'], $data['user']);
             $DIC->ui()->mainTemplate()->setOnScreenMessage("success", $this->txt('code_updated'), true);
         } else {
             $DIC->ui()->mainTemplate()->setOnScreenMessage("failure", $this->txt('code_not_updated'), true);
@@ -1473,5 +1483,61 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
         }
 
         parent::afterSave($new_object);
+    }
+
+    /**
+     * @throws ResponseSendingException
+     * @throws JsonException
+     */
+    public function doAutoCompleteUser(): void
+    {
+        $auto = new ilUserAutoComplete();
+        $auto->setUser($this->user);
+        $auto->setPrivacyMode(ilUserAutoComplete::PRIVACY_MODE_IGNORE_USER_SETTING);
+        if ($this->user->isAnonymous()) {
+            $auto->setSearchType(ilUserAutoComplete::SEARCH_TYPE_EQUALS);
+        }
+
+        $query = ilUtil::stripSlashes(
+            $this->getRequestValue('q', $this->refinery->kindlyTo()->string(), '')
+        );
+
+        if ($this->http->wrapper()->query()->has('fetchall')) {
+            $auto->setLimit(ilUserAutoComplete::MAX_ENTRIES);
+        }
+        $auto->setMoreLinkAvailable(true);
+        $auto->setSearchFields(['firstname', 'lastname', 'login', 'email']);
+        $auto->setResultField('login');
+        $auto->enableFieldSearchableCheck(true);
+
+        $this->sendResponse($auto->getList($query), true);
+    }
+
+    protected function getRequestValue(string $key, Transformation $trafo, $default = null)
+    {
+        if ($this->http->wrapper()->query()->has($key)) {
+            return $this->http->wrapper()->query()->retrieve($key, $trafo);
+        }
+
+        if ($this->http->wrapper()->post()->has($key)) {
+            return $this->http->wrapper()->post()->retrieve($key, $trafo);
+        }
+
+        return $default;
+    }
+
+    /**
+     * @throws ResponseSendingException
+     * @throws JsonException
+     */
+    public function sendResponse($response, bool $isJson = false): void
+    {
+        $this->http->saveResponse(
+            $this->http->response()
+                ->withHeader(ResponseHeader::CONTENT_TYPE, 'application/json')
+                ->withBody(Streams::ofString($isJson ? $response : json_encode($response, JSON_THROW_ON_ERROR)))
+        );
+        $this->http->sendResponse();
+        $this->http->close();
     }
 }

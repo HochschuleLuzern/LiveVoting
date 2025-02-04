@@ -54,6 +54,7 @@ class LiveVotingCodesUI
 
         $DIC->ui()->mainTemplate()->addCss($plugin->getDirectory() . "/templates/css/fix_table_width.css");
         $DIC->ui()->mainTemplate()->addJavaScript($plugin->getDirectory() . "/templates/js/codes_tab.js");
+        $DIC->ui()->mainTemplate()->addCss($plugin->getDirectory() . "/templates/css/codes_tab.css");
 
         $this->buildToolbar();
 
@@ -66,6 +67,7 @@ class LiveVotingCodesUI
                 return "
                     $('#$id').attr('livevoting-code', '{$code["code"]}');
                     $('#$id').attr('livevoting-votes', '{$code["value"]}');
+                    $('#$id').attr('livevoting-user', '{$code["user"]}');
                     $('#$id').attr('modal-opener', 'change_votes_modal');
                 ";
             });
@@ -81,6 +83,7 @@ class LiveVotingCodesUI
                 'code' => $DIC->ui()->factory()->table()->column()->text($plugin->txt("codes_table_code"))->withIsSortable(true),
                 'used' => $DIC->ui()->factory()->table()->column()->text($plugin->txt("codes_table_used"))->withIsSortable(true),
                 'value' => $DIC->ui()->factory()->table()->column()->text($plugin->txt("codes_table_votes"))->withIsSortable(true),
+                'user' => $DIC->ui()->factory()->table()->column()->text($plugin->txt("codes_table_user"))->withIsSortable(true),
                 'actions' => $DIC->ui()->factory()->table()->column()->text($plugin->txt("common_actions"))->withIsSortable(false)
             ],
                 $codes_data
@@ -169,7 +172,13 @@ class LiveVotingCodesUI
                 return "
                     $('#$id').attr('surname', 'votes');
                 ";
-            }),
+            })->withByline($plugin->txt("codes_table_votes_info")),
+            "user" => $DIC->ui()->factory()->input()->field()->text($plugin->txt("codes_table_user"))->withOnLoadCode(function ($id) use ($DIC) {
+                return "
+                    $('#$id').attr('surname', 'user');
+                    $('#$id').attr('autocomplete_url', '" . $DIC->ctrl()->getLinkTargetByClass(ilObjLiveVotingGUI::class, 'doAutoCompleteUser') . "');
+                ";
+            })->withByline($plugin->txt("codes_table_user_info")),
         );
 
         return $DIC->ui()->factory()->input()->container()->form()->standard($DIC->ctrl()->getFormActionByClass(ilObjLiveVotingGUI::class, 'editCode'), $inputs);

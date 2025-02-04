@@ -33,7 +33,31 @@ $(document).ready(function () {
             case 'change_votes_modal':
                 $modal.find('[surname="code"]').attr("value", $trigger.attr("livevoting-code"));
                 $modal.find('[surname="votes"]').attr("value", $trigger.attr("livevoting-votes"));
+                $modal.find('[surname="user"]').attr("value", $trigger.attr("livevoting-user"));
                 break;
         }
     }
+
+    setTimeout(function () {
+        const $input = $('[surname="user"]');
+
+        const searchForUsers = function(url, search){
+            const call = m => o => o[m]();
+            return fetch(url + '&q=' + search).then(call('json')).then(function(response){
+                console.log(Object.values(response.items));
+                return Object.values(response.items);
+            });
+        };
+
+        $input.autocomplete({
+            source: function (request, response) {
+                searchForUsers($input.attr("autocomplete_url"), request.term)
+                .then(r => response(r))
+                .catch(error => {
+                    console.error("Search error:", error);
+                    response([]);
+                });
+            },
+        });
+    }, 500);
 });

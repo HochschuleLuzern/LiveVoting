@@ -647,7 +647,8 @@ class LiveVoting
                 "obj_id" => $this->getId(),
                 "code" => $code,
                 "used" => 0,
-                "value" => 1
+                "value" => 1,
+                "user" => ""
             ]);
         }
 
@@ -657,15 +658,16 @@ class LiveVoting
     /**
      * @throws LiveVotingException
      */
-    public function updateCode(string $code, int $value): void
+    public function updateCode(string $code, int $value, string $user): void
     {
         $database = new LiveVotingDatabase();
 
-        $database->update("xlvo_codes", ["value" => $value], ["code" => $code]);
+        $database->update("xlvo_codes", ["value" => $value, "user" => $user], ["obj_id" => $this->getId(), "code" => $code]);
 
         foreach ($this->codes as $key => $c) {
             if ($c["code"] === $code) {
                 $this->codes[$key]["value"] = $value;
+                $this->codes[$key]["user"] = $user;
             }
         }
     }
@@ -675,11 +677,19 @@ class LiveVoting
      */
     public function validateCode(string $code, string $identifier): bool
     {
+        global $DIC;
+
+        $user_login = $DIC->user()->getLogin();
+
         $this->loadCodes();
 
         foreach ($this->codes as $c) {
-            if ($c["code"] === $code && ($c["used"] == "0") || $c["used"] == $identifier) {
-                return true;
+            if ($c["code"] === $code && ($c["used"] == "0" || $c["used"] == $identifier)) {
+                if (empty($c["user"])) {
+                    return true;
+                } else if ($c["user"] == $user_login) {
+                    return true;
+                }
             }
         }
 

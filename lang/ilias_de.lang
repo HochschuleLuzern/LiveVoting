@@ -342,9 +342,12 @@ clear_codes#:#Codes löschen
 codes_table_code#:#Code
 codes_table_used#:#Used
 codes_table_votes#:#Stimmen
+codes_table_user#:#Benutzer
 codes_cleared#:#Codes wurden gelöscht
 codes_generated#:#Codes wurden generiert
 edit_code#:#Code bearbeiten
 code_updated#:#Code wurde aktualisiert
 code_not_updated#:#Code konnte nicht aktualisiert werden
 code_invalid#:#Code is invalid or already used
+codes_table_votes_info#:#Anzahl der Stimmen für diesen Code
+codes_table_user_info#:#Nur der Benutzer, der diesen Code verwenden kann. Hinweis: Nur verfügbar bei nicht-anonymen LiveVotings
