@@ -108,15 +108,31 @@ class LiveVotingInputNumberRangeUI extends LiveVotingInputResultsGUI
         foreach ($votes as $vote) {
             $value = (int)$vote->getFreeInput();
 
-            $values[] = $value;
+            $mult = $vote->getMult();
 
-            if (!isset($modes[$value])) {
-                $modes[$value] = 0;
+            if ($mult > 1) {
+                for ($i = 0; $i < $mult; $i++) {
+                    $values[] = $value;
+
+                    if (!isset($modes[$value])) {
+                        $modes[$value] = 0;
+                    }
+
+                    $modes[$value]++;
+
+                    $vote_sum = $vote_sum + $value;
+                }
+            } else {
+                $values[] = $value;
+
+                if (!isset($modes[$value])) {
+                    $modes[$value] = 0;
+                }
+
+                $modes[$value]++;
+
+                $vote_sum = $vote_sum + $value;
             }
-
-            $modes[$value]++;
-
-            $vote_sum = $vote_sum + $value;
         }
 
         $mode = ilLiveVotingPlugin::getInstance()->txt("qtype_6_mode_not_applicable");
@@ -126,25 +142,25 @@ class LiveVotingInputNumberRangeUI extends LiveVotingInputResultsGUI
         }
 
         $calculateMedian = function ($aValues) {
-            $aToCareAbout = array();
-            foreach ($aValues as $mValue) {
-                if ($mValue >= 0) {
-                    $aToCareAbout[] = $mValue;
-                }
-            }
+            $aToCareAbout = array_filter($aValues, function ($mValue) {
+                return $mValue >= 0;
+            });
+
             $iCount = count($aToCareAbout);
-            sort($aToCareAbout, SORT_NUMERIC);
-            if ($iCount > 2) {
-                if ($iCount % 2 == 0) {
-                    return ($aToCareAbout[floor($iCount / 2) - 1] + $aToCareAbout[floor($iCount / 2)]) / 2;
-                } else {
-                    return $aToCareAbout[$iCount / 2];
-                }
-            } elseif (isset($aToCareAbout[0])) {
-                return $aToCareAbout[0];
-            } else {
-                return 0;
+
+            if ($iCount === 0) {
+                return 0.0;
             }
+
+            sort($aToCareAbout, SORT_NUMERIC);
+
+            if ($iCount % 2 == 0) {
+                $median = ($aToCareAbout[$iCount / 2 - 1] + $aToCareAbout[$iCount / 2]) / 2;
+            } else {
+                $median = $aToCareAbout[floor($iCount / 2)];
+            }
+
+            return $median;
         };
 
         $info = new LiveVotingBarCollectionUI();
@@ -187,10 +203,21 @@ class LiveVotingInputNumberRangeUI extends LiveVotingInputResultsGUI
             return (intval($v1->getFreeInput()) - intval($v2->getFreeInput()));
         });
         foreach ($votes as $value) {
-            $bar = new LiveVotingBarFreeTextUI($value);
-            $bar->setBig(true);
-            $bar->setCenter(true);
-            $bars->addBar($bar);
+            $mult = $value->getMult();
+
+            if ($mult > 1) {
+                for ($i = 0; $i < $mult; $i++) {
+                    $bar = new LiveVotingBarFreeTextUI($value);
+                    $bar->setBig(true);
+                    $bar->setCenter(true);
+                    $bars->addBar($bar);
+                }
+            } else {
+                $bar = new LiveVotingBarFreeTextUI($value);
+                $bar->setBig(true);
+                $bar->setCenter(true);
+                $bars->addBar($bar);
+            }
         }
 
         return $bars->getHTML();
