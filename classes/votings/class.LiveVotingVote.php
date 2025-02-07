@@ -365,7 +365,7 @@ class LiveVotingVote
             $identifier = $this->getUserId();
         }
 
-        $nickname = LiveVotingParticipant::getNicknameFromDatabase($identifier, $player);
+        $nickname = LiveVotingParticipant::getNicknameFromDatabase((string) $identifier, $player);
 
         if ($nickname != "") {
             return $nickname;
