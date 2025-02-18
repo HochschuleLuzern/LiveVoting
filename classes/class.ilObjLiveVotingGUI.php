@@ -1493,10 +1493,6 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
     {
         $auto = new ilUserAutoComplete();
         $auto->setUser($this->user);
-        $auto->setPrivacyMode(ilUserAutoComplete::PRIVACY_MODE_IGNORE_USER_SETTING);
-        if ($this->user->isAnonymous()) {
-            $auto->setSearchType(ilUserAutoComplete::SEARCH_TYPE_EQUALS);
-        }
 
         $query = ilUtil::stripSlashes(
             $this->getRequestValue('q', $this->refinery->kindlyTo()->string(), '')
@@ -1508,7 +1504,7 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
         $auto->setMoreLinkAvailable(true);
         $auto->setSearchFields(['firstname', 'lastname', 'login', 'email']);
         $auto->setResultField('login');
-        $auto->enableFieldSearchableCheck(true);
+        $auto->enableFieldSearchableCheck(false);
 
         $this->sendResponse($auto->getList($query), true);
     }

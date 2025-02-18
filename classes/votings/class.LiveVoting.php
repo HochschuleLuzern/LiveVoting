@@ -23,6 +23,8 @@ namespace LiveVoting\votings;
 use Endroid\QrCode\QrCode;
 use ilLink;
 use ilLiveVotingPlugin;
+use ilObjUser;
+use ilSystemNotification;
 use LiveVoting\platform\LiveVotingConfig;
 use LiveVoting\platform\LiveVotingDatabase;
 use LiveVoting\platform\LiveVotingException;
@@ -660,12 +662,18 @@ class LiveVoting
      */
     public function updateCode(string $code, int $value, string $user): void
     {
+        $this->loadCodes();
+
         $database = new LiveVotingDatabase();
 
         $database->update("xlvo_codes", ["value" => $value, "user" => $user], ["obj_id" => $this->getId(), "code" => $code]);
 
         foreach ($this->codes as $key => $c) {
             if ($c["code"] === $code) {
+                if ($this->codes[$key]["user"] != $user) {
+                    $this->sendMail($user, $code);
+                }
+
                 $this->codes[$key]["value"] = $value;
                 $this->codes[$key]["user"] = $user;
             }
@@ -694,5 +702,19 @@ class LiveVoting
         }
 
         return false;
+    }
+
+    private function sendMail(string $user, string $code): void
+    {
+        $user_id = (int) ilObjUser::_lookupId($user);
+
+        if ($user_id === 0) {
+            return;
+        }
+
+        $ntf = new ilSystemNotification();
+        $ntf->setSubjectDirect("LiveVoting Code");
+        $ntf->setIntroductionDirect("You have been assigned a code for a LiveVoting session. \n\nCode: " . $code);
+        $ntf->sendMailAndReturnRecipients([$user_id]);
     }
 }
