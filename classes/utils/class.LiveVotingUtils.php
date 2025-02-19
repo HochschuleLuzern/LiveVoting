@@ -78,21 +78,4 @@ class LiveVotingUtils
             }
         }, $a_str);
     }
-
-    public static function countWithMult(array $votes): int
-    {
-        $count = 0;
-
-        foreach ($votes as $vote) {
-            $mult = $vote->getMult();
-
-            if ($mult > 0) {
-                $count += $mult;
-            } else {
-                $count++;
-            }
-        }
-
-        return $count;
-    }
 }

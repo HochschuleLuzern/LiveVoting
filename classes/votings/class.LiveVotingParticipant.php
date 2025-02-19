@@ -165,13 +165,14 @@ class LiveVotingParticipant
     /**
      * @throws LiveVotingException
      */
-    public function getCode(string $obj_id): string
+    public function getCode(int $obj_id): string
     {
         $database = new LiveVotingDatabase();
 
         $result = $database->select("xlvo_codes", [
             'obj_id' => $obj_id,
-            'used' => $this->getIdentifier()
+            'used' => $this->getIdentifier(),
+            'selected' => 1
         ], ['code']);
 
         if (!empty($result)) {
@@ -184,34 +185,23 @@ class LiveVotingParticipant
     /**
      * @throws LiveVotingException
      */
-    public function setCode(string $obj_id, string $code): void
+    public function setCode(int $obj_id, string $code): void
     {
         $database = new LiveVotingDatabase();
 
         $database->update('xlvo_codes', [
+            'selected' => 0
+        ], [
+            'obj_id' => $obj_id,
             'used' => $this->getIdentifier()
+        ]);
+
+        $database->update('xlvo_codes', [
+            'used' => $this->getIdentifier(),
+            "selected" => 1
         ], [
             'obj_id' => $obj_id,
             'code' => $code
         ]);
-    }
-
-    /**
-     * @throws LiveVotingException
-     */
-    public function getMult(string $obj_id): int
-    {
-        $database = new LiveVotingDatabase();
-
-        $result = $database->select("xlvo_codes", [
-            'obj_id' => $obj_id,
-            'used' => $this->getIdentifier()
-        ], ['value']);
-
-        if (!empty($result)) {
-            return (int) $result[0]['value'] ?? 1;
-        }
-
-        return 1;
     }
 }

@@ -283,8 +283,8 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
 
         $data = $form->getData();
 
-        if (isset($data['code']) && isset($data['votes'])) {
-            $this->object->getLiveVoting()->updateCode($data['code'], $data['votes'], $data['user']);
+        if (isset($data['code']) && isset($data['user'])) {
+            $this->object->getLiveVoting()->updateCode($data['code'], $data['user']);
             $DIC->ui()->mainTemplate()->setOnScreenMessage("success", $this->txt('code_updated'), true);
         } else {
             $DIC->ui()->mainTemplate()->setOnScreenMessage("failure", $this->txt('code_not_updated'), true);
@@ -1307,7 +1307,7 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
                 $vote->setStatus(1);
                 $vote->setFreeInput($_POST['input']);
                 $vote->setRoundId(LiveVotingRound::getLatestRoundId($liveVoting->getId()));
-                $vote->setMult($user->getMult((string) $liveVoting->getId()));
+                $vote->setCode($user->getCode($liveVoting->getId()));
                 $vote->save();
 
                 $return_value = ['vote_id' => $vote->getId()];

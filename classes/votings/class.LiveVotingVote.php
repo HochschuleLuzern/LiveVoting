@@ -47,7 +47,7 @@ class LiveVotingVote
     private int $round_id = 0;
     private ?string $free_input = null;
     private int $free_input_category = 0;
-    private int $mult = 0;
+    private string $code = "";
 
     /**
      * @throws LiveVotingException
@@ -181,14 +181,14 @@ class LiveVotingVote
         $this->free_input_category = $free_input_category;
     }
 
-    public function getMult(): int
+    public function getCode(): string
     {
-        return $this->mult;
+        return $this->code;
     }
 
-    public function setMult(int $mult): void
+    public function setCode(string $code): void
     {
-        $this->mult = $mult;
+        $this->code = $code;
     }
 
     /**
@@ -214,7 +214,7 @@ class LiveVotingVote
                 "round_id" => $this->round_id,
                 "free_input" => $this->free_input,
                 "free_input_category" => $this->free_input_category,
-                "mult" => $this->mult
+                "code" => $this->code
             ), array(
                 "id" => $this->id
             ));
@@ -234,7 +234,7 @@ class LiveVotingVote
                 "round_id" => $this->round_id,
                 "free_input" => $this->free_input,
                 "free_input_category" => $this->free_input_category,
-                "mult" => $this->mult
+                "code" => $this->code
             ));
         }
 
@@ -266,7 +266,7 @@ class LiveVotingVote
             $this->setRoundId((int)$result[0]["round_id"]);
             $this->setFreeInput($result[0]["free_input"]);
             $this->setFreeInputCategory((int)$result[0]["free_input_category"]);
-            $this->setMult((int)$result[0]["mult"]);
+            $this->setCode($result[0]["code"]);
         }
     }
 
@@ -298,7 +298,7 @@ class LiveVotingVote
      */
     public static function vote(LiveVotingParticipant $participant, int $voting_id, int $round_id, int $option_id): int
     {
-        $obj = self::getUserInstance($participant, $voting_id, $option_id);
+        $obj = self::getUserInstance($participant, $voting_id, $option_id, LiveVotingQuestion::getObjIdFromVotingId($voting_id));
 
         $obj->setStatus(1);
         $obj->setRoundId($round_id);
@@ -317,7 +317,7 @@ class LiveVotingVote
      */
     public static function unvote(LiveVotingParticipant $participant, int $voting_id, ?int $option_id = null): int
     {
-        $obj = self::getUserInstance($participant, $voting_id, $option_id);
+        $obj = self::getUserInstance($participant, $voting_id, $option_id, LiveVotingQuestion::getObjIdFromVotingId($voting_id));
 
         $obj->setStatus(0);
 
@@ -382,7 +382,7 @@ class LiveVotingVote
      * @return array
      * @throws LiveVotingException
      */
-    public static function getVotesOfUser(LiveVotingParticipant $participant, int $voting_id, int $round_id, bool $incl_inactive = false): array
+    public static function getVotesOfUser(LiveVotingParticipant $participant, int $voting_id, int $round_id, bool $incl_inactive = false, ?int $obj_id = null): array
     {
         $database = new LiveVotingDatabase();
 
@@ -399,6 +399,14 @@ class LiveVotingVote
             $where['user_id'] = $participant->getIdentifier();
         } else {
             $where['user_identifier'] = $participant->getIdentifier();
+        }
+
+        if (isset($obj_id)) {
+            $code = $participant->getCode($obj_id);
+
+            if (!empty($code)) {
+                $where['code'] = $code;
+            }
         }
 
         $result = $database->select("rep_robj_xlvo_vote_n", $where, ["id"]);
@@ -420,7 +428,7 @@ class LiveVotingVote
      * @throws LiveVotingException
      * @throws Exception
      */
-    protected static function getUserInstance(LiveVotingParticipant $participant, int $voting_id, $option_id): LiveVotingVote
+    protected static function getUserInstance(LiveVotingParticipant $participant, int $voting_id, $option_id, ?int $obj_id = null): LiveVotingVote
     {
         $database = new LiveVotingDatabase();
 
@@ -433,6 +441,14 @@ class LiveVotingVote
             $where['user_id'] = $participant->getIdentifier();
         } else {
             $where['user_identifier'] = $participant->getIdentifier();
+        }
+
+        if (isset($obj_id)) {
+            $code = $participant->getCode($obj_id);
+
+            if (!empty($code)) {
+                $where['code'] = $code;
+            }
         }
 
         $result = $database->select("rep_robj_xlvo_vote_n", $where, ["id"]);
@@ -458,7 +474,7 @@ class LiveVotingVote
 
         $vote->setOptionId($option_id);
         $vote->setVotingId($voting_id);
-        $vote->setMult($participant->getMult((string) LiveVotingQuestion::getObjIdFromVotingId($voting_id)));
+        $vote->setCode($participant->getCode(LiveVotingQuestion::getObjIdFromVotingId($voting_id)));
 
         return $vote;
     }
@@ -505,19 +521,19 @@ class LiveVotingVote
             $result = $database->select("rep_robj_xlvo_vote_n", array(
                 "round_id" => $round_id,
                 "status" => 1
-            ), ["id", "user_identifier", "user_id"], "AND (user_identifier LIKE '" . $filter . "' OR user_id = '" . $filter . "')");
+            ), ["id", "user_identifier", "user_id", "code"], "AND (user_identifier LIKE '" . $filter . "' OR user_id = '" . $filter . "')");
         } else {
             $result = $database->select("rep_robj_xlvo_vote_n", array(
                 "round_id" => $round_id,
                 "status" => 1
-            ), ["id", "user_identifier", "user_id"]);
+            ), ["id", "user_identifier", "user_id", "code"]);
         }
 
         foreach ($result as $row) {
             if (!$distinct) {
                 $votes[] = new LiveVotingVote((int)$row["id"]);
             } else {
-                $votes[$row["user_identifier"] . "_" . $row["user_id"]] = new LiveVotingVote((int)$row["id"]);
+                $votes[$row["user_identifier"] . "_" . $row["user_id"] . "_" . $row["code"]] = new LiveVotingVote((int)$row["id"]);
             }
         }
 
@@ -604,7 +620,7 @@ class LiveVotingVote
             "voting_id" => $voting_id,
             "status" => 1,
             "round_id" => $round_id
-        ), ["user_id_type", "user_identifier", "user_id"], "GROUP BY user_id_type, user_identifier, user_id");
+        ), ["user_id_type", "user_identifier", "user_id"], "GROUP BY user_id_type, user_identifier, user_id, code");
 
         return count($result);
     }
@@ -615,69 +631,5 @@ class LiveVotingVote
     public static function hasVotes(int $voting_id, int $round_id): bool
     {
         return self::countVotes($voting_id, $round_id) > 0;
-    }
-
-
-    public static function countVotesWithMult(int $voting_id, int $round_id): int
-    {
-        $database = new LiveVotingDatabase();
-
-        $result = $database->select("rep_robj_xlvo_vote_n", array(
-            "voting_id" => $voting_id,
-            "status" => 1,
-            "round_id" => $round_id
-        ), ["mult"]);
-
-        $count = 0;
-
-        foreach ($result as $vote) {
-            $mult = $vote["mult"];
-
-            if ($mult < 1) {
-                $mult = 1;
-            }
-
-            $count += $mult;
-        }
-
-        return $count;
-    }
-
-    /**
-     * @throws LiveVotingException
-     */
-    public static function countVotersWithMult(int $voting_id, int $round_id): int
-    {
-        $database = new LiveVotingDatabase();
-
-        $result = $database->select("rep_robj_xlvo_vote_n", array(
-            "voting_id" => $voting_id,
-            "status" => 1,
-            "round_id" => $round_id
-        ), ["user_id_type", "user_identifier", "user_id", "mult"]);
-
-        $count = array();
-
-        foreach ($result as $vote) {
-            $mult = $vote["mult"];
-
-            if ($mult < 1) {
-                $mult = 1;
-            }
-
-            $id = $vote["user_id_type"] . "_" . $vote["user_identifier"] . "_" . $vote["user_id"];
-
-            if (!isset($count[$id]) || $count[$id] < $mult) {
-                $count[$id] = $mult;
-            }
-        }
-
-        $total = 0;
-
-        foreach ($count as $c) {
-            $total += $c;
-        }
-
-        return $total;
     }
 }

@@ -90,7 +90,7 @@ class LiveVotingResultsTableGUI extends ilTable2GUI
         if ($this->parent_obj->getObject()->getLiveVoting()->getMode()->getMode() == LiveVotingMode::CHALLENGE_MODE) {
             $this->addColumn(ilLiveVotingPlugin::getInstance()->txt('common_points'), 'points', 'auto');
         } elseif ($this->parent_obj->getObject()->getLiveVoting()->getMode()->getMode() == LiveVotingMode::TRANSFER_MODE) {
-            $this->addColumn(ilLiveVotingPlugin::getInstance()->txt('codes_table_votes'), 'votes', 'auto');
+            $this->addColumn(ilLiveVotingPlugin::getInstance()->txt('codes_table_code'), 'code', 'auto');
         }
     }
 
@@ -141,7 +141,7 @@ class LiveVotingResultsTableGUI extends ilTable2GUI
                     "round_id" => $round_id,
                     "id" => $vote->getId(),
                     "points" => LiveVotingPlayer::getPlayerPoints($vote->getUserIdType() == 1 ? (string) $vote->getUserId() : (string) $vote->getUserIdentifier(), $obj_id, $question->getId(), $round_id),
-                    "votes" => $vote->getMult()
+                    "code" => $vote->getCode()
                 );
             }
         }
@@ -167,7 +167,7 @@ class LiveVotingResultsTableGUI extends ilTable2GUI
         if ($this->parent_obj->getObject()->getLiveVoting()->getMode()->getMode() == LiveVotingMode::CHALLENGE_MODE) {
             $this->tpl->setVariable("EXTRA", "<td class='std small {CSS_ROW}'>{$a_set['points']}</td>");
         }elseif ($this->parent_obj->getObject()->getLiveVoting()->getMode()->getMode() == LiveVotingMode::TRANSFER_MODE) {
-            $this->tpl->setVariable("EXTRA", "<td class='std small {CSS_ROW}'>{$a_set['votes']}</td>");
+            $this->tpl->setVariable("EXTRA", "<td class='std small {CSS_ROW}'>{$a_set['code']}</td>");
         }
         if ($this->isShowHistory()) {
             $this->tpl->setVariable("ACTION", ilLiveVotingPlugin::getInstance()->txt("common_show_history"));
@@ -279,7 +279,7 @@ class LiveVotingResultsTableGUI extends ilTable2GUI
         $votes = array();
 
         foreach ($all_votes as $v) {
-            if ($v->getVotingId() == $question_id && ($v->getUserId() == $vote->getUserId() && $v->getUserIdentifier() == $vote->getUserIdentifier())) {
+            if ($v->getVotingId() == $question_id && ($v->getUserId() == $vote->getUserId() && $v->getUserIdentifier() == $vote->getUserIdentifier()) && $v->getCode() == $vote->getCode()) {
                 $votes[] = $v;
             }
         }

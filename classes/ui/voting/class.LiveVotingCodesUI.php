@@ -66,9 +66,8 @@ class LiveVotingCodesUI
             $button = $DIC->ui()->factory()->button()->standard($plugin->txt("edit_code"), "")->withOnLoadCode(function ($id) use ($code) {
                 return "
                     $('#$id').attr('livevoting-code', '{$code["code"]}');
-                    $('#$id').attr('livevoting-votes', '{$code["value"]}');
                     $('#$id').attr('livevoting-user', '{$code["user"]}');
-                    $('#$id').attr('modal-opener', 'change_votes_modal');
+                    $('#$id').attr('modal-opener', 'edit_code_modal');
                 ";
             });
 
@@ -82,7 +81,6 @@ class LiveVotingCodesUI
             [
                 'code' => $DIC->ui()->factory()->table()->column()->text($plugin->txt("codes_table_code"))->withIsSortable(true),
                 'used' => $DIC->ui()->factory()->table()->column()->text($plugin->txt("codes_table_used"))->withIsSortable(true),
-                'value' => $DIC->ui()->factory()->table()->column()->text($plugin->txt("codes_table_votes"))->withIsSortable(true),
                 'user' => $DIC->ui()->factory()->table()->column()->text($plugin->txt("codes_table_user"))->withIsSortable(true),
                 'actions' => $DIC->ui()->factory()->table()->column()->text($plugin->txt("common_actions"))->withIsSortable(false)
             ],
@@ -131,7 +129,7 @@ class LiveVotingCodesUI
         $plugin = ilLiveVotingPlugin::getInstance();
 
         $modals = array(
-            "change_votes_modal" => [$DIC->ui()->renderer()->render($this->buildEditCodeForm()), $plugin->txt("edit_code")],
+            "edit_code_modal" => [$DIC->ui()->renderer()->render($this->buildEditCodeForm()), $plugin->txt("edit_code")],
         );
 
         $rendered = array();
@@ -168,11 +166,6 @@ class LiveVotingCodesUI
                     $('#$id').attr('readonly', 'readonly');
                 ";
             }),
-            "votes" => $DIC->ui()->factory()->input()->field()->numeric($plugin->txt("codes_table_votes"))->withRequired(true)->withOnLoadCode(function ($id) {
-                return "
-                    $('#$id').attr('surname', 'votes');
-                ";
-            })->withByline($plugin->txt("codes_table_votes_info")),
             "user" => $DIC->ui()->factory()->input()->field()->text($plugin->txt("codes_table_user"))->withOnLoadCode(function ($id) use ($DIC) {
                 return "
                     $('#$id').attr('surname', 'user');

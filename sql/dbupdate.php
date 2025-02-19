@@ -842,6 +842,12 @@ if (!$db->tableExists("xlvo_codes")) {
             "type" => "text",
             "length" => 256,
             "notnull" => false
+        ],
+        "selected" => [
+            "type" => "integer",
+            "length" => 4,
+            "notnull" => false,
+            "default" => 0
         ]
     ];
 
@@ -850,8 +856,8 @@ if (!$db->tableExists("xlvo_codes")) {
 }
 
 if ($db->tableExists("rep_robj_xlvo_vote_n")) {
-    $db->addTableColumn("rep_robj_xlvo_vote_n", "mult", [
-        "type" => "integer",
+    $db->addTableColumn("rep_robj_xlvo_vote_n", "code", [
+        "type" => "text",
         "length" => 256,
         "notnull" => false
     ]);

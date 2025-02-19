@@ -742,7 +742,7 @@ class LiveVotingPlayer
      */
     public function getVotesOfUser($incl_inactive = false): array
     {
-        return LiveVotingVote::getVotesOfUser(LiveVotingParticipant::getInstance(), $this->getActiveVoting(), $this->getRoundId(), $incl_inactive);
+        return LiveVotingVote::getVotesOfUser(LiveVotingParticipant::getInstance(), $this->getActiveVoting(), $this->getRoundId(), $incl_inactive, $this->getObjId());
     }
 
     /**
@@ -794,7 +794,7 @@ class LiveVotingPlayer
             $vote->setStatus(1);
             $vote->setFreeInput($item['input']);
             $vote->setRoundId(LiveVotingRound::getLatestRoundId($liveVotingConfig->getId()));
-            $vote->setMult($user->getMult((string) $liveVotingConfig->getId()));
+            $vote->setCode($user->getCode($liveVotingConfig->getId()));
             $vote->save();
             if ($this->getActiveVotingObject()->getQuestionType() == "FreeText" && !$this->getActiveVotingObject()->isMultiFreeInput()) {
                 $this->unvoteAll($vote->getId());

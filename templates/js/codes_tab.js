@@ -30,9 +30,8 @@ $(document).ready(function () {
 
     function processModalOpen(modal_opener, $trigger, $modal) {
         switch (modal_opener) {
-            case 'change_votes_modal':
+            case 'edit_code_modal':
                 $modal.find('[surname="code"]').attr("value", $trigger.attr("livevoting-code"));
-                $modal.find('[surname="votes"]').attr("value", $trigger.attr("livevoting-votes"));
                 $modal.find('[surname="user"]').attr("value", $trigger.attr("livevoting-user"));
                 break;
         }

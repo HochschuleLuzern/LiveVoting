@@ -649,8 +649,8 @@ class LiveVoting
                 "obj_id" => $this->getId(),
                 "code" => $code,
                 "used" => 0,
-                "value" => 1,
-                "user" => ""
+                "user" => "",
+                "selected" => 0
             ]);
         }
 
@@ -660,13 +660,13 @@ class LiveVoting
     /**
      * @throws LiveVotingException
      */
-    public function updateCode(string $code, int $value, string $user): void
+    public function updateCode(string $code, string $user): void
     {
         $this->loadCodes();
 
         $database = new LiveVotingDatabase();
 
-        $database->update("xlvo_codes", ["value" => $value, "user" => $user], ["obj_id" => $this->getId(), "code" => $code]);
+        $database->update("xlvo_codes", ["user" => $user], ["obj_id" => $this->getId(), "code" => $code]);
 
         foreach ($this->codes as $key => $c) {
             if ($c["code"] === $code) {
@@ -674,7 +674,6 @@ class LiveVoting
                     $this->sendMail($user, $code);
                 }
 
-                $this->codes[$key]["value"] = $value;
                 $this->codes[$key]["user"] = $user;
             }
         }

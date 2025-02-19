@@ -351,3 +351,4 @@ code_not_updated#:#Code konnte nicht aktualisiert werden
 code_invalid#:#Code is invalid or already used
 codes_table_votes_info#:#Anzahl der Stimmen für diesen Code
 codes_table_user_info#:#Nur der Benutzer, der diesen Code verwenden kann. Hinweis: Nur verfügbar bei nicht-anonymen LiveVotings
+change_code#:#Code ändern (Aktueller: %s)

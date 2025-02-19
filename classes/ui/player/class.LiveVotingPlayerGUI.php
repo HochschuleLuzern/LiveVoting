@@ -122,7 +122,7 @@ class LiveVotingPlayerGUI
         }
 
         if ($this->live_voting->getMode()->getMode() == LiveVotingMode::TRANSFER_MODE) {
-            if (LiveVotingParticipant::getInstance()->getCode((string) $this->live_voting->getId()) == "") {
+            if (LiveVotingParticipant::getInstance()->getCode($this->live_voting->getId()) == "") {
                 $DIC->ctrl()->redirectByClass(["ilUIPluginRouterGUI", "LiveVotingPlayerGUI"], 'requestCode');
             }
         }
@@ -218,10 +218,15 @@ class LiveVotingPlayerGUI
 
     /**
      * @throws ilTemplateException
+     * @throws ilCtrlException
      */
     public function showVotingTemplate(): void
     {
         global $DIC;
+
+        if ($this->getLiveVoting()->getMode()->getMode() == LiveVotingMode::TRANSFER_MODE) {
+            $DIC->ui()->mainTemplate()->setVariable("HEADER_BUTTONS", $this->buildTMHeaderButtons());
+        }
 
         $DIC->ui()->mainTemplate()->setVariable("PLAYER_CONTENT", $this->getVoterPlayerTemplate()->get());
 
@@ -455,7 +460,7 @@ class LiveVotingPlayerGUI
             $result = $form->getData();
             if (isset($result['code'])) {
                 if ($this->live_voting->validateCode($result['code'], LiveVotingParticipant::getInstance()->getIdentifier())) {
-                    LiveVotingParticipant::getInstance()->setCode((string) $this->live_voting->getId(), $result['code']);
+                    LiveVotingParticipant::getInstance()->setCode($this->live_voting->getId(), $result['code']);
 
                     $DIC->ctrl()->redirect($this, 'startVoterPlayer');
 
@@ -596,5 +601,20 @@ class LiveVotingPlayerGUI
         }
 
         LiveVotingJs::sendResponse($this->live_voting->getPlayer()->getPlayerDataForVoter());
+    }
+
+    /**
+     * @throws ilCtrlException
+     */
+    private function buildTMHeaderButtons(): string
+    {
+        global $DIC;
+
+        $participant = LiveVotingParticipant::getInstance();
+
+        $label = vsprintf($this->plugin_object->txt("change_code"), [$participant->getCode($this->live_voting->getId())]);
+        $code_button = $DIC->ui()->factory()->button()->standard($label, $DIC->ctrl()->getLinkTarget($this, "requestCode"));
+
+        return $DIC->ui()->renderer()->render($code_button);
     }
 }
