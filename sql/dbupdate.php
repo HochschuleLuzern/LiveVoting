@@ -723,6 +723,17 @@ if ($db->tableExists('rep_robj_xlvo_config_n')) {
 
         $db->manipulate("UPDATE rep_robj_xlvo_config_n SET scoreboard = 0 WHERE scoreboard IS NULL");
     }
+
+    if (!$db->tableColumnExists('rep_robj_xlvo_config_n', 'voting_style')) {
+        $db->addTableColumn("rep_robj_xlvo_config_n", "voting_style", [
+            "type" => "text",
+            "length" => 256,
+            "notnull" => true,
+            "default" => "classic"
+        ]);
+
+        $db->manipulate("UPDATE rep_robj_xlvo_config_n SET nicknames = 0 WHERE nicknames IS NULL");
+    }
 }
 
 if (!$db->tableExists("xlvo_nicknames")) {

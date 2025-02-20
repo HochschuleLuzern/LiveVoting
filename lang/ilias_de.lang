@@ -352,3 +352,8 @@ code_invalid#:#Code is invalid or already used
 codes_table_votes_info#:#Anzahl der Stimmen für diesen Code
 codes_table_user_info#:#Nur der Benutzer, der diesen Code verwenden kann. Hinweis: Nur verfügbar bei nicht-anonymen LiveVotings
 change_code#:#Code ändern (Aktueller: %s)
+styles#:#Stil
+voting_style#:#Abstimmungsstil
+voting_style_info#:#Wählen Sie den Stil der Abstimmung
+voting_style_classic#:#Klassischer Stil
+voting_style_new#:#Neuer Stil
