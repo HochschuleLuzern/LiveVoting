@@ -352,7 +352,7 @@ code_not_updated#:#Code could not be updated
 code_invalid#:#Code is invalid or already used
 codes_table_votes_info#:#Number of votes for this code
 codes_table_user_info#:#Only the user who can use this code. Note: Only available with non-anonymous LiveVotings
-change_code#:#Change code (Current: %s)
+change_code#:#Code: %s
 styles#:#Styles
 voting_style#:#Voting Style
 voting_style_info#:#Select the style of the voting

@@ -613,7 +613,9 @@ class LiveVotingPlayerGUI
         $participant = LiveVotingParticipant::getInstance();
 
         $label = vsprintf($this->plugin_object->txt("change_code"), [$participant->getCode($this->live_voting->getId())]);
-        $code_button = $DIC->ui()->factory()->button()->standard($label, $DIC->ctrl()->getLinkTarget($this, "requestCode"));
+        $code_button = $DIC->ui()->factory()->button()->standard($label, $DIC->ctrl()->getLinkTarget($this, "requestCode"))->withOnloadCode(function ($id) use ($DIC) {
+            return "$('#$id').addClass('navbar-btn')";
+        });
 
         return $DIC->ui()->renderer()->render($code_button);
     }
