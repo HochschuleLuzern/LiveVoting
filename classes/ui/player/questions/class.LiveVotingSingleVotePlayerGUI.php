@@ -59,6 +59,8 @@ class LiveVotingSingleVotePlayerGUI extends LiveVotingQuestionTypesUI
      */
     protected function submit(): void
     {
+        global $DIC;
+
         $param_manager = ParamManager::getInstance();
         $liveVoting = LiveVoting::getLiveVotingFromPin($param_manager->getPin());
         $this->player = $liveVoting->getPlayer();
@@ -85,6 +87,8 @@ class LiveVotingSingleVotePlayerGUI extends LiveVotingQuestionTypesUI
         }
 
         $this->player->createHistoryObject();
+
+        $DIC->ui()->mainTemplate()->setOnScreenMessage("success", ilLiveVotingPlugin::getInstance()->txt('vote_has_changed'), false);
     }
 
 

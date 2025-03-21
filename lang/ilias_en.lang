@@ -358,3 +358,4 @@ voting_style#:#Voting Style
 voting_style_info#:#Select the style of the voting
 voting_style_classic#:#Classic style
 voting_style_new#:#New style
+vote_has_changed#:#The vote has been changed

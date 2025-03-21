@@ -66,6 +66,8 @@ class LiveVotingFreeTextPlayerGUI extends LiveVotingQuestionTypesUI
      */
     protected function submit()
     {
+        global $DIC;
+
         $param_manager = ParamManager::getInstance();
         $liveVoting = LiveVoting::getLiveVotingFromPin($param_manager->getPin());
         $this->player = $liveVoting->getPlayer();
@@ -100,6 +102,8 @@ class LiveVotingFreeTextPlayerGUI extends LiveVotingQuestionTypesUI
                 ));
             }
         }
+
+        $DIC->ui()->mainTemplate()->setOnScreenMessage("success", ilLiveVotingPlugin::getInstance()->txt('vote_has_changed'), false);
     }
 
     /**

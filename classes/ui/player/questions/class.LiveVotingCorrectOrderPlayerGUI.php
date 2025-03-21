@@ -68,6 +68,8 @@ class LiveVotingCorrectOrderPlayerGUI extends LiveVotingQuestionTypesUI
      */
     protected function submit(): void
     {
+        global $DIC;
+
         $param_manager = ParamManager::getInstance();
         $liveVoting = LiveVoting::getLiveVotingFromPin($param_manager->getPin());
         $this->player = $liveVoting->getPlayer();
@@ -76,6 +78,8 @@ class LiveVotingCorrectOrderPlayerGUI extends LiveVotingQuestionTypesUI
             "input" => json_encode($_POST['id']),
             "vote_id" => $_POST['vote_id']
         ));
+
+        $DIC->ui()->mainTemplate()->setOnScreenMessage("success", ilLiveVotingPlugin::getInstance()->txt('vote_has_changed'), false);
     }
 
     /**
