@@ -52,17 +52,19 @@ abstract class LiveVotingQuestionTypesUI
         switch ($nextClass) {
             default:
                 $cmd = null;
-                if (isset($_POST['cmd'])) {
-                    $cmd = $_POST['cmd'];
-                    if (!empty($cmd)) {
-                        if (is_array($cmd)) {
-                            // this most likely only works by accident, but
-                            // the selected or clicked command button will
-                            // always be sent as first array entry. This
-                            // should definitely be done differently.
-                            $cmd = (string)array_key_first($cmd);
-                        } else {
-                            $cmd = (string)$cmd;
+                if( (is_array($_POST) && array_key_exists('cmd',$_POST)) || ( !is_array($_POST) && $_POST->offsetExists('cmd'))){
+                    if (isset($_POST['cmd'])) {
+                        $cmd = $_POST['cmd'];
+                        if (!empty($cmd)) {
+                            if (is_array($cmd)) {
+                                // this most likely only works by accident, but
+                                // the selected or clicked command button will
+                                // always be sent as first array entry. This
+                                // should definitely be done differently.
+                                $cmd = (string)array_key_first($cmd);
+                            } else {
+                                $cmd = (string)$cmd;
+                            }
                         }
                     }
                 }
