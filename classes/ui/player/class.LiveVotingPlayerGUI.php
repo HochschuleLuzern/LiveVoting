@@ -19,6 +19,7 @@ declare(strict_types=1);
  *
  */
 
+use LiveVoting\platform\ilias\LiveVotingContext;
 use LiveVoting\platform\LiveVotingConfig;
 use LiveVoting\platform\LiveVotingException;
 use LiveVoting\Utils\LiveVotingJs;
@@ -26,6 +27,8 @@ use LiveVoting\Utils\ParamManager;
 use LiveVoting\votings\LiveVoting;
 use LiveVoting\votings\LiveVotingPlayer;
 use LiveVoting\votings\LiveVotingVoter;
+use LiveVoting\objects\modes\LiveVotingMode;
+use LiveVoting\votings\LiveVotingParticipant;
 
 /**
  * Class LiveVotingPlayerGUI
@@ -109,18 +112,34 @@ class LiveVotingPlayerGUI
      * @throws ilSystemStyleException
      * @throws LiveVotingException
      * @throws ilCtrlException|ilException
+     * @throws Exception
      */
     protected function startVoterPlayer(): void
     {
+        global $DIC;
+
+        $player = $this->live_voting->getPlayer();
+
+        if ($this->live_voting->isAnonymous() && LiveVotingParticipant::getInstance()->getIdentifier() == ANONYMOUS_USER_ID) {
+            LiveVotingContext::setContext(1);
+
+            LiveVotingParticipant::getInstance()->setIdentifier(session_id())->setType(2);
+        }
+
+        if ($this->live_voting->getMode()->getMode() == LiveVotingMode::CHALLENGE_MODE) {
+            if ($this->live_voting->isNicknames() && LiveVotingParticipant::getInstance()->getNickname($player->getId()) == "") {
+                $DIC->ctrl()->redirectByClass(["ilUIPluginRouterGUI", "LiveVotingPlayerGUI"], 'requestNickname');
+            }
+        }
+
         $this->prepareFrameworkTemplate();
         $this->prepareVotingTemplate();
         $this->initCssAndJs();
         $this->showVotingTemplate();
 
-        $player = $this->live_voting->getPlayer();
-
-        LiveVotingQuestionTypesUI::getInstance($player)->initJS();
-
+        if ($player->getActiveVotingObject() !== null) {
+            LiveVotingQuestionTypesUI::getInstance($player)->initJS();
+        }
     }
 
     private function prepareFrameworkTemplate(): void
@@ -165,7 +184,7 @@ class LiveVotingPlayerGUI
 
         LiveVotingJs::getInstance()->initMathJax();
 
-        $t = array('player_seconds');
+        $t = array('player_seconds', 'new_voting', 'new_voting_message', 'seconds_left', 'qtype_1_unvote', 'qtype_1_vote');
 
         $delay = LiveVotingConfig::get('request_frequency');
         if (is_numeric($delay)) {
@@ -228,7 +247,7 @@ class LiveVotingPlayerGUI
      */
     public function getHTML(): void
     {
-        $tpl_voting = new ilTemplate($this->getPluginObject()->getDirectory() . '/templates/default/Voter/tpl.inner_screen.html', true, true);
+        $tpl_voting = new ilTemplate($this->getPluginObject()->getDirectory() . '/templates/default/Voter/tpl.' . $this->live_voting->getMode()->getInnerTemplate() . '.html', true, true);
         $this->setVotingTemplate($tpl_voting);
 
         if ($this->getLiveVoting()->getPlayer()->isFrozen()) {
@@ -262,16 +281,47 @@ class LiveVotingPlayerGUI
                         $this->getVotingTemplate()->parseCurrentBlock();
                     }
                     $this->getVotingTemplate()->setVariable('QUESTION', $xlvoQuestionTypesGUI->getMobileHTML());
+                    $this->getVotingTemplate()->setVariable('QTYPE', $this->getLiveVoting()->getPlayer()->getActiveVotingObject()->getQuestionTypeLabel());
+                    $this->getVotingTemplate()->setVariable('QTYPE_DISPLAY', 'display');
                     break;
                 case LiveVotingPlayer::STAT_START_VOTING:
                     $this->getVotingTemplate()->setVariable('TITLE', $this->txt('voter_header_start'));
                     $this->getVotingTemplate()->setVariable('DESCRIPTION', $this->txt('voter_info_start'));
-                    $this->getVotingTemplate()->setVariable('GLYPH', '<span class="glyphicon glyphicon-pause"></span>');
+
+                    if ($this->getLiveVoting()->getMode()->getMode() != LiveVotingMode::CHALLENGE_MODE) {
+                        $this->getVotingTemplate()->setVariable('GLYPH', '<span class="glyphicon glyphicon-pause"></span>');
+                    } else {
+                        $this->getVotingTemplate()->setVariable('ONLINE_TEXT', vsprintf($this->plugin_object->txt("start_online"), [LiveVotingVoter::countVoters($this->live_voting->getPlayer()->getId())]));
+                        $this->getVotingTemplate()->setVariable('N_QUESTIONS', $this->live_voting->countQuestions() . " " . $this->plugin_object->txt("player_voting_list"));
+                    }
+
                     break;
                 case LiveVotingPlayer::STAT_END_VOTING:
-                    $this->getVotingTemplate()->setVariable('TITLE', $this->txt('voter_header_end'));
-                    $this->getVotingTemplate()->setVariable('DESCRIPTION', $this->txt('voter_info_end'));;
-                    $this->getVotingTemplate()->setVariable('GLYPH', '<span class="glyphicon glyphicon-stop"></span>');
+                    if ($this->getLiveVoting()->getMode()->getMode() != LiveVotingMode::CHALLENGE_MODE) {
+                        $this->getVotingTemplate()->setVariable('TITLE', $this->txt('voter_header_end'));
+                        $this->getVotingTemplate()->setVariable('DESCRIPTION', $this->txt('voter_info_end'));;
+                        $this->getVotingTemplate()->setVariable('GLYPH', '<span class="glyphicon glyphicon-stop"></span>');
+                    } else {
+                        $this->getVotingTemplate()->setVariable('TITLE', $this->txt('voter_header_end'));
+                        $this->getVotingTemplate()->setVariable('DESCRIPTION', $this->txt('voter_info_end'));;
+
+                        $tpl_scoreboard = new ilTemplate($this->getPluginObject()->getDirectory() . '/templates/default/Voter/tpl.scoreboard.html', true, false);
+
+                        $players = LiveVotingPlayer::getPlayersForScoreboard($this->live_voting->getPlayer());
+
+                        $html = '';
+                        foreach ($players as $player) {
+                            $tpl_scoreboard_points = new ilTemplate($this->getPluginObject()->getDirectory() . '/templates/default/Voter/tpl.scoreboard_score.html', true    , false);
+                            $tpl_scoreboard_points->setVariable('PLAYER', $player['nickname']);
+                            $tpl_scoreboard_points->setVariable('POINTS', $player['points']);
+                            $html .= $tpl_scoreboard_points->get();
+                        }
+
+                        $tpl_scoreboard->setVariable('POINTS', $html);
+
+                        $this->getVotingTemplate()->setVariable('QUESTION', $tpl_scoreboard->get());
+                    }
+
                     break;
                 case LiveVotingPlayer::STAT_FROZEN:
                     $this->getVotingTemplate()->setVariable('TITLE', $this->txt('voter_header_frozen'));
@@ -281,6 +331,28 @@ class LiveVotingPlayerGUI
                     $this->getVotingTemplate()->setVariable('PIN', $this->getLiveVoting()->getPin());
                     $this->getVotingTemplate()->setVariable('GLYPH', '<span class="glyphicon glyphicon-pause"></span>');
                     break;
+                case LiveVotingPlayer::STAT_SCOREBOARD:
+                    $this->getVotingTemplate()->setVariable('TITLE', $this->txt('voter_header_scoreboard'));
+
+                    $tpl_scoreboard = new ilTemplate($this->getPluginObject()->getDirectory() . '/templates/default/Voter/tpl.scoreboard.html', true, false);
+
+                    $players = LiveVotingPlayer::getPlayersForScoreboard($this->live_voting->getPlayer());
+
+                    $html = '';
+                    foreach ($players as $player) {
+                        $tpl_scoreboard_points = new ilTemplate($this->getPluginObject()->getDirectory() . '/templates/default/Voter/tpl.scoreboard_score.html', true    , false);
+                        $tpl_scoreboard_points->setVariable('PLAYER', $player['nickname']);
+                        $tpl_scoreboard_points->setVariable('POINTS', $player['points']);
+                        $html .= $tpl_scoreboard_points->get();
+                    }
+
+                    $tpl_scoreboard->setVariable('POINTS', $html);
+                    
+                    $this->getVotingTemplate()->setVariable('QUESTION', $tpl_scoreboard->get());
+
+                    break;
+
+
             }
             echo $this->getVotingTemplate()->get();
             exit();
@@ -314,12 +386,64 @@ class LiveVotingPlayerGUI
         $tpl->setVariable('TITLE', $this->txt('player_start_voting'));
         $tpl->setVariable('FORM', $pin_form->getHTML());
 
+
         $this->setVoterPlayerTemplate($tpl);
 
         $this->prepareFrameworkTemplate();
         $this->setVoterPlayerTemplate($tpl);
 
         $this->showVotingTemplate();
+    }
+
+    /**
+     * @throws LiveVotingException
+     * @throws ilCtrlException
+     */
+    public function requestNickname(): void
+    {
+        global $DIC;
+
+        $receivingNickname = $_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['nickname_input']);
+
+        if ($receivingNickname) {
+            $this->collectNickname();
+        }
+
+        // Show nickname form
+        $tpl = new ilTemplate(ilLiveVotingPlugin::getInstance()->getDirectory() . '/templates/default/Voter/tpl.nickname.html', true, false);
+        $DIC->ui()->mainTemplate()->addCss(ilLiveVotingPlugin::getInstance()->getDirectory() . '/templates/default/Voter/pin.css'); // Por ahora usamos el mismo css que el de pin
+        $nickname_form = new ilPropertyFormGUI();
+        $nickname_form->setFormAction($DIC->ctrl()->getLinkTarget($this, 'requestNickname'));
+        $nickname_form->addCommandButton('requestNickname', $this->txt('voter_send'));
+
+        $te = new ilTextInputGUI($this->txt('voter_nickname_input'), 'nickname_input');
+        $te->setMaxLength(50);
+        $te->setTitle("Nickname"); // Debemos usar internacionalización
+        $nickname_form->addItem($te);
+
+        $tpl->setVariable('TITLE', $this->txt('player_start_voting'));
+        $tpl->setVariable('FORM', $nickname_form->getHTML());
+
+
+        $this->setVoterPlayerTemplate($tpl);
+
+        $this->prepareFrameworkTemplate();
+        $this->setVoterPlayerTemplate($tpl);
+
+        $this->showVotingTemplate();
+    }
+
+    protected function collectNickname(): void
+    {
+        global $DIC;
+
+        // TODO: Use Ilias API to get and validate post data
+
+        $nickname = filter_input(INPUT_POST, 'nickname_input'); // Debemos validar el nickname primero
+
+        LiveVotingParticipant::getInstance()->setNickname($nickname, $this->live_voting->getPlayer()->getId());
+
+        $DIC->ctrl()->redirect($this, 'startVoterPlayer');
     }
 
     /**
@@ -402,6 +526,20 @@ class LiveVotingPlayerGUI
      */
     protected function getVotingData(): void
     {
+        global $DIC;
+
+        if ($this->live_voting->getMode()->getMode() == LiveVotingMode::CHALLENGE_MODE) {
+            $player = $this->live_voting->getPlayer();
+
+            if ($this->live_voting->isNicknames() && LiveVotingParticipant::getInstance()->getNickname($player->getId()) == "") {
+                LiveVotingJs::sendResponse([
+                    'redirect' => $DIC->ctrl()->getLinkTargetByClass(["ilUIPluginRouterGUI", "LiveVotingPlayerGUI"], 'requestNickname')
+                ]);
+
+                return;
+            }
+        }
+
         if ($this->live_voting->isShowAttendees()) {
             LiveVotingVoter::register($this->live_voting->getPlayer()->getId());
         }

@@ -53,7 +53,7 @@ grp_create_xlvo#:#Create LiveVoting
 fold_create_xlvo#:#Create LiveVoting
 incorrect_order#:#Incorrect Order
 msg_success_voting_created#:#Voting has been created
-msg_success_voting_updated#:#Voting has been udpated
+msg_success_voting_updated#:#Voting has been updated
 new_round#:#New Round
 obj_anonymous#:#Vote without Login
 obj_crs#:#Course
@@ -140,6 +140,7 @@ qtype_4_hide_correct_order#:#Korrekte Reihenfolge verbergen
 qtype_4_id#:#ID
 qtype_4_options#:#Options
 qtype_4_option_correct_position#:#Correct Position
+qtype_4_option_correct_answer#:#Correct Order
 qtype_4_option_position#:#Position
 qtype_4_option_text#:#Term
 qtype_4_save#:#Send
@@ -179,6 +180,10 @@ rminable_select_start_time#:#Start
 root_create_xlvo#:#Create LiveVoting
 show_attendees#:#Show Attendees (Online)
 show_attendees_info#:#Show the count of attendees, this has an impact on performance and should only be activated for a small live voting.
+nicknames#:#Nicknames
+nicknames_info#:#This option allows the participants to enter a nickname before voting, only available in challenge mode.
+scoreboard#:#Scoreboard
+scoreboard_info#:#Show the scoreboard after each question, only available in challenge mode.
 subtab_show#:#Show
 tab_content#:#Content
 tab_manage#:#Manage
@@ -263,6 +268,11 @@ xlvo_read#:#Read (used only in non-anonymous-mode)
 xlvo_copy#:#Copy LiveVoting
 xlvo_visible#:#LiveVotings visible
 xlvo_write#:#Present and edit LiveVoting
+xlvo_mode#:#Mode
+xlvo_mode_basic#:#Standard
+xlvo_mode_basic_info#:#The classic LiveVoting mode
+xlvo_mode_challenge#:#Challenge
+xlvo_mode_challenge_info#:#With the Challenge mode, the participants play a game raching points for answering questions correctly.
 qtype_1_total_obj_results_alway_on_info#:#MISSING qtype_1_total_obj_results_alway_on_info
 obj_frozen_alway_ofxlvo_edit#:#MISSING obj_frozen_alway_ofxlvo_edit
 playplayer_msg_no_start_2#:#MISSING playplayer_msg_no_start_2
@@ -319,3 +329,27 @@ voting_msg_reset#:#Results have been reset
 sorting_msg_saved#:#Order has been saved
 voting_msg_duplicated_failed#:#Question could not be duplicated
 voting_msg_duplicated_success#:#Question has been duplicated
+end_time#:#End time
+common_points#:#Points
+score_form_header#:#Score
+voting_score#:#Question Score
+voting_score_info#:#The score of the question, to reach the maximum score the user must answer exactly the correct answer
+voter_header_scoreboard#:#Scoreboard
+voting_countdown#:#Time to answer
+voting_countdown_info#:#Time to answer the question, this also affects the question score
+form_input_not_valid_cm#:#Some of the information entered is incomplete or invalid. Please correct your entry. (Remember you need at least one correct option and the score must be greater than 0)
+voter_header_end#:#The vote is closed
+voter_info_end#:#Waiting for the presenter...
+no_countdown#:#No countdown
+new_voting#:#New Voting
+new_voting_message#:#A new voting has started.
+seconds_left#:#Seconds left
+single_choice#:#Single Choice
+multiple_choice#:#Multiple Choice
+next#:#Next
+styles#:#Styles
+voting_style#:#Voting Style
+voting_style_info#:#Select the style of the voting
+voting_style_classic#:#Classic style
+voting_style_new#:#New style
+empty_input_error#:#There cannot be empty options

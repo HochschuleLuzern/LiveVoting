@@ -27,6 +27,7 @@ use LiveVoting\platform\LiveVotingConfig;
 use LiveVoting\platform\LiveVotingDatabase;
 use LiveVoting\platform\LiveVotingException;
 use LiveVoting\questions\LiveVotingQuestion;
+use LiveVoting\objects\modes\LiveVotingMode;
 
 /**
  * Class LiveVoting
@@ -41,9 +42,9 @@ class LiveVoting
 
     /**
      * How the voting is being conducted
-     * @var LiveVotingMode
+     * @var LiveVotingMode|null
      */
-    private LiveVotingMode $mode;
+    private ?LiveVotingMode $mode;
 
     /**
      * The log of the voting
@@ -75,7 +76,10 @@ class LiveVoting
     private int $frozen_behaviour = 0;
     private int $results_behaviour = 0;
     private string $puk = "";
+    private bool $nicknames = false;
+    private bool $scoreboard = false;
     private LiveVotingPlayer $player;
+    private string $voting_style = "classic";
 
     /**
      * LiveVoting constructor.
@@ -93,6 +97,10 @@ class LiveVoting
 
         if ($loadPlayer && $this->getId() !== 0) {
             $this->player = LiveVotingPlayer::loadFromObjId($this->getId());
+
+            if ($this->getMode()->getMode() === LiveVotingMode::CHALLENGE_MODE) {
+                $this->player->setFrozen(false);
+            }
         }
     }
 
@@ -288,6 +296,26 @@ class LiveVoting
         $this->puk = $puk;
     }
 
+    public function isNicknames(): bool
+    {
+        return $this->nicknames;
+    }
+
+    public function setNicknames(bool $nicknames): void
+    {
+        $this->nicknames = $nicknames;
+    }
+
+    public function isScoreboard(): bool
+    {
+        return $this->scoreboard;
+    }
+
+    public function setScoreboard(bool $scoreboard): void
+    {
+        $this->scoreboard = $scoreboard;
+    }
+
     public function getPlayer(): LiveVotingPlayer
     {
         return $this->player;
@@ -296,6 +324,16 @@ class LiveVoting
     public function setPlayer(LiveVotingPlayer $player): void
     {
         $this->player = $player;
+    }
+
+    public function getVotingStyle(): string
+    {
+        return $this->voting_style;
+    }
+
+    public function setVotingStyle(string $voting_style): void
+    {
+        $this->voting_style = $voting_style;
     }
 
     /**
@@ -318,7 +356,11 @@ class LiveVoting
             "results_behaviour" => $this->results_behaviour,
             "voting_history" => (int)$this->voting_history,
             "show_attendees" => (int)$this->show_attendees,
-            "puk" => $this->puk
+            "puk" => $this->puk,
+            "mode" => $this->mode->getMode(),
+            "nicknames" => (int)$this->nicknames,
+            "scoreboard" => (int)$this->scoreboard,
+            "voting_style" => $this->voting_style
         ));
 
         return $this->id;
@@ -342,11 +384,13 @@ class LiveVoting
             $this->setVotingHistory((bool)$result[0]["voting_history"]);
             $this->setShowAttendees((bool)$result[0]["show_attendees"]);
             $this->setPuk($result[0]["puk"]);
+            $this->setMode(LiveVotingMode::new((int) $result[0]["mode"]));
+            $this->setNicknames((bool)$result[0]["nicknames"]);
+            $this->setScoreboard((bool)$result[0]["scoreboard"]);
+            $this->setVotingStyle($result[0]["voting_style"]);
         } else {
             $this->loadDefaultValues();
         }
-
-        $this->setMode(new LiveVotingMode(LiveVotingMode::BASIC_MODE)); // For this version, only basic mode is available
 
         $this->questions = LiveVotingQuestion::loadAllQuestionsByObjectId($this->getId());
     }
@@ -365,6 +409,8 @@ class LiveVoting
         $this->setVotingHistory(false);
         $this->setShowAttendees(false);
         $this->setPuk(LiveVoting::generatePuk());
+        $this->setMode(LiveVotingMode::new(LiveVotingMode::BASIC_MODE));
+        $this->setNicknames(false);
 
         $this->save();
     }
@@ -404,12 +450,12 @@ class LiveVoting
     public static function generatePin(): string
     {
         $database = new LiveVotingDatabase();
-        $pin = LiveVoting::generateCode(4);
+        $pin = LiveVoting::generateCode(4, true);
 
         $result = $database->select("rep_robj_xlvo_config_n", ["pin" => $pin]);
 
         while (isset($result[0])) {
-            $pin = LiveVoting::generateCode(4);
+            $pin = LiveVoting::generateCode(4, true);
             $result = $database->select("rep_robj_xlvo_config_n", ["pin" => $pin]);
         }
 
@@ -441,13 +487,18 @@ class LiveVoting
      * @param int $lenght
      * @return string
      */
-    private static function generateCode(int $lenght): string
+    private static function generateCode(int $lenght, bool $start_with_letter = false): string
     {
         $characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         $pin = "";
 
-        for ($i = 0; $i < $lenght; $i++) {
+        for ($i = 0; $i < ($start_with_letter ? $lenght - 1 : $lenght); $i++) {
             $pin .= $characters[rand(0, strlen($characters) - 1)];
+        }
+
+        if ($start_with_letter) {
+            $letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            $pin = $letters[rand(0, strlen($letters) - 1)] . $pin;
         }
 
         return $pin;
@@ -512,6 +563,21 @@ class LiveVoting
         }
 
         return "";
+    }
+
+    /**
+     * @throws LiveVotingException
+     */
+    public static function getModeFromObjId(int $obj_id): int
+    {
+        $database = new LiveVotingDatabase();
+        $result = $database->select("rep_robj_xlvo_config_n", array("obj_id" => $obj_id), array("mode"));
+
+        if (isset($result[0])) {
+            return (int) $result[0]["mode"];
+        }
+
+        return 0;
     }
 
     /**

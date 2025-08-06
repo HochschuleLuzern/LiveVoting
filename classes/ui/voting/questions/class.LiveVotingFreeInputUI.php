@@ -28,6 +28,7 @@ use ilHtmlPurifierNotFoundException;
 use ILIAS\UI\Component\Input\Container\Form\Form;
 use ILIAS\UI\Factory;
 use ILIAS\UI\Renderer;
+use ilLegacyFormElementsUtil;
 use ilLiveVotingPlugin;
 use ilObject;
 use ilObjLiveVotingGUI;

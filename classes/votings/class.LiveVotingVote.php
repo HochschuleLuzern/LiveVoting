@@ -320,16 +320,44 @@ class LiveVotingVote
         return LiveVotingQuestionOption::loadOptionById($this->getOptionId());
     }
 
-    public function getParticipantName(): string
+    public function getParticipantName(?int $player = null): string
     {
+        if (isset($player)) {
+            $nickname = $this->checkNickName($player);
+
+            if (isset($nickname)) {
+                return $nickname;
+            }
+        }
+
         if ($this->getUserIdType() == 1 && $this->getUserId()) {
             $name = ilObjUser::_lookupName($this->getUserId());
 
-            return $name['firstname'] . " " . $name['lastname'];
+            return $name['firstname'] . " " . $name['lastname'] . " (" . $name["login"] . ")";
         }
 
 
         return ilLiveVotingPlugin::getInstance()->txt("common_participant") . " " . substr($this->getUserIdentifier(), 0, 4);
+    }
+
+    /**
+     * @throws LiveVotingException
+     */
+    private function checkNickName(int $player): ?string
+    {
+        $identifier = $this->getUserIdentifier();
+
+        if ($this->getUserIdType() == 1 && $this->getUserId()) {
+            $identifier = $this->getUserId();
+        }
+
+        $nickname = LiveVotingParticipant::getNicknameFromDatabase((string) $identifier, $player);
+
+        if ($nickname != "") {
+            return $nickname;
+        }
+
+        return null;
     }
 
     /**
@@ -462,7 +490,7 @@ class LiveVotingVote
             $result = $database->select("rep_robj_xlvo_vote_n", array(
                 "round_id" => $round_id,
                 "status" => 1
-            ), ["id", "user_identifier", "user_id"], "AND (user_identifier LIKE " . $filter . " OR user_id = " . $filter . ")");
+            ), ["id", "user_identifier", "user_id"], "AND (user_identifier LIKE '" . $filter . "' OR user_id = '" . $filter . "')");
         } else {
             $result = $database->select("rep_robj_xlvo_vote_n", array(
                 "round_id" => $round_id,

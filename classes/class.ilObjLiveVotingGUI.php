@@ -34,6 +34,7 @@ use LiveVoting\UI\LiveVotingFreeInputUI;
 use LiveVoting\UI\LiveVotingManageUI;
 use LiveVoting\UI\LiveVotingPrioritiesUI;
 use LiveVoting\UI\LiveVotingRangeUI;
+use LiveVoting\UI\LiveVotingChoicesCMUI;
 use LiveVoting\UI\LiveVotingResultsUI;
 use LiveVoting\UI\LiveVotingSettingsUI;
 use LiveVoting\UI\LiveVotingUI;
@@ -46,6 +47,7 @@ use LiveVoting\votings\LiveVotingPlayer;
 use LiveVoting\votings\LiveVotingRound;
 use LiveVoting\votings\LiveVotingVote;
 use LiveVoting\votings\LiveVotingVoter;
+use LiveVoting\objects\modes\LiveVotingMode;
 
 /**
  * Class ilObjLiveVotingGUI
@@ -84,10 +86,10 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
         return 'index';
     }
 
-
     public function performCommand(string $cmd): void
     {
         global $DIC;
+        $this->checkPermission("read");
         $this->setTitleAndDescription();
         $DIC->help()->setScreenIdComponent(ilLiveVotingPlugin::PLUGIN_ID);
 
@@ -102,6 +104,7 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
             case 'startPlayerAnUnfreeze':
             case 'getPlayerData':
             case 'getAttendees':
+            case 'removeVoter':
             case 'manage':
             case 'results':
             case 'selectType':
@@ -110,6 +113,7 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
             case 'selectedCorrectOrder':
             case 'selectedPriorities':
             case 'selectedRange':
+            case 'selectedChoicesCM':
             case 'updateProperties':
             case 'confirmNewRound':
             case 'newRound':
@@ -129,10 +133,15 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
             case 'confirmDeleteQuestion':
             case 'deleteQuestion':
             case 'saveSorting':
+            case 'endTime':
                 $this->{$cmd}();
                 break;
             case 'edit':
-                $this->editQuestion();
+                if ($this->object->getLiveVoting()->getMode()->getMode() == LiveVotingMode::CHALLENGE_MODE) {
+                    $this->editQuestionCM();
+                } else {
+                    $this->editQuestion();
+                }
                 break;
         }
     }
@@ -218,6 +227,36 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
 
             } else {
                 $saving_info = $DIC->ui()->renderer()->render($DIC->ui()->factory()->messageBox()->failure($DIC->language()->txt("form_input_not_valid")));
+                $this->tpl->setContent($saving_info . $DIC->ui()->renderer()->render($form->withRequest($DIC->http()->request())));
+            }
+        } else {
+            $this->tpl->setContent($DIC->ui()->renderer()->render($form));
+
+        }
+    }
+
+    /**
+     * @throws ilException
+     * @throws LiveVotingException
+     */
+    public function selectedChoicesCM(): void
+    {
+        global $DIC;
+        $this->tabs->activateTab("tab_manage");
+
+        $liveVotingChoicesCMUI = new LiveVotingChoicesCMUI();
+        $form = $liveVotingChoicesCMUI->getChoicesForm();
+        if ($DIC->http()->request()->getMethod() == "POST") {
+
+            $id = $liveVotingChoicesCMUI->save($form->withRequest($DIC->http()->request())->getData());
+
+            if ($id != 0) {
+                $DIC->ctrl()->setParameter($this, "question_id", $id);
+                $DIC->ctrl()->setParameter($this, "show_success", true);
+                $DIC->ctrl()->redirect($this, "edit");
+
+            } else {
+                $saving_info = $DIC->ui()->renderer()->render($DIC->ui()->factory()->messageBox()->failure($this->plugin->txt("form_input_not_valid_cm")));
                 $this->tpl->setContent($saving_info . $DIC->ui()->renderer()->render($form->withRequest($DIC->http()->request())));
             }
         } else {
@@ -434,15 +473,24 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
     public function editProperties(): void
     {
         global $DIC;
-        $this->tabs->activateTab("tab_edit");
+        if (!ilObjLiveVotingAccess::hasWriteAccess()) {
+            $this->tpl->setContent(
+                $this->renderer->render($this->factory->messageBox()->failure($this->plugin->txt("permission_denied")))
+            );
+        }
+         else {
+             $this->tabs->activateTab("tab_edit");
 
-        $liveVotingSettingsUI = new LiveVotingSettingsUI($this->getRefId());
+             $liveVotingSettingsUI = new LiveVotingSettingsUI($this->getRefId());
 
-        $sections = $liveVotingSettingsUI->initPropertiesForm();
-        $form_action = $DIC->ctrl()->getLinkTargetByClass(ilObjLiveVotingGUI::class, "editProperties");
-        $rendered = $liveVotingSettingsUI->renderForm($form_action, $sections);
+             $sections = $liveVotingSettingsUI->initPropertiesForm();
+             $form_action = $DIC->ctrl()->getLinkTargetByClass(ilObjLiveVotingGUI::class, "editProperties");
+             $rendered = $liveVotingSettingsUI->renderForm($form_action, $sections);
 
-        $this->tpl->setContent($rendered);
+             $this->tpl->setContent($rendered);
+         }
+
+
     }
 
     /**
@@ -623,6 +671,55 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
                 $next->setUrl($DIC->ctrl()->getLinkTarget($this, "edit"));
                 $next->setCaption(ilGlyphGUI::get(ilGlyphGUI::NEXT), false);
                 $DIC->toolbar()->addButtonInstance($next);
+            }
+        } else {
+            $DIC->ui()->renderer()->render($DIC->ui()->factory()->messageBox()->failure(ilLiveVotingPlugin::getInstance()->txt('permission_denied_write')));
+            $DIC->ctrl()->redirect($this, "index");
+        }
+    }
+
+    /**
+     * @throws ilCtrlException
+     * @throws ilException
+     * @throws LiveVotingException
+     */
+    public function editQuestionCM(): void
+    {
+        global $DIC;
+
+        if (ilObjLiveVotingAccess::hasWriteAccess()) {
+            $this->tabs->activateTab("tab_manage");
+
+            $question = $this->object->getLiveVoting()->getQuestionById((int)$_GET['question_id']);
+            switch ($question->getQuestionType()) {
+                case "Choices":
+                    $liveVotingChoicesUI = new LiveVotingChoicesCMUI($question->getId());
+                    $form = $liveVotingChoicesUI->getChoicesForm();
+                    $saving_info = "";
+                    if ($DIC->http()->request()->getMethod() == "POST") {
+
+                        $id = $liveVotingChoicesUI->save($form->withRequest($DIC->http()->request())->getData(), $question->getId());
+
+                        if ($id !== 0) {
+                            $liveVotingChoicesUI = new LiveVotingChoicesCMUI($id);
+                            $form = $liveVotingChoicesUI->getChoicesForm();
+
+                            $DIC->ctrl()->setParameter($this, "question_id", $id);
+                            $saving_info = $DIC->ui()->renderer()->render($DIC->ui()->factory()->messageBox()->success($this->plugin->txt('msg_success_voting_updated')));
+                            $this->tpl->setContent($saving_info . $DIC->ui()->renderer()->render($form));
+                        } else {
+                            $saving_info = $DIC->ui()->renderer()->render($DIC->ui()->factory()->messageBox()->failure($this->plugin->txt("form_input_not_valid_cm")));
+                            $this->tpl->setContent($saving_info . $DIC->ui()->renderer()->render($form->withRequest($DIC->http()->request())));
+                        }
+
+                    } else {
+                        if (isset($_GET['show_success'])) {
+                            $saving_info = $DIC->ui()->renderer()->render($DIC->ui()->factory()->messageBox()->success($this->plugin->txt('msg_success_voting_created')));
+                        }
+                        $this->tpl->setContent($saving_info . $DIC->ui()->renderer()->render($form));
+
+                    }
+                    break;
             }
         } else {
             $DIC->ui()->renderer()->render($DIC->ui()->factory()->messageBox()->failure(ilLiveVotingPlugin::getInstance()->txt('permission_denied_write')));
@@ -960,7 +1057,14 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
 
         $param_manager = ParamManager::getInstance();
 
-        $this->object->getLiveVoting()->getPlayer()->unfreeze($param_manager->getVoting());
+        $countdown = $this->object->getLiveVoting()->getPlayer()->getActiveVotingObject()->getCountdown();
+
+        if ($this->object->getLiveVoting()->getMode()->getMode() == LiveVotingMode::CHALLENGE_MODE && $countdown !== -1) {
+            $this->object->getLiveVoting()->getPlayer()->startCountDown($countdown);
+        } else {
+            $this->object->getLiveVoting()->getPlayer()->unfreeze($param_manager->getVoting());
+
+        }
     }
 
     /**
@@ -971,7 +1075,7 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
 
         $liveVotingPlayer = LiveVotingPlayer::loadFromObjId($this->object->getLiveVoting()->getId());
 
-        $liveVotingPlayer->attend();
+        $liveVotingPlayer->attend($this->object->getLiveVoting()->getMode());
 
         $param_manager = ParamManager::getInstance();
 
@@ -1145,6 +1249,7 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
     {
         $return_value = true;
 
+        /** @var LiveVoting $liveVoting */
         $liveVoting = $this->object->getLiveVoting();
         switch ($_POST['call']) {
             case 'toggle_freeze':
@@ -1250,6 +1355,18 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
                 $return_value = new stdClass();
                 $return_value->buttons_html = $this->getButtonsHTML();
                 break;
+            case 'end_time':
+                $liveVoting->getPlayer()->setCountdown(0);
+
+                if ($liveVoting->getMode()->getMode() == LiveVotingMode::CHALLENGE_MODE && $liveVoting->getPlayer()->getActiveVotingObject()->getCountdown() == -1) {
+                    $liveVoting->getPlayer()->setStatus(LiveVotingPlayer::STAT_SCOREBOARD);
+                }
+
+                $liveVoting->getPlayer()->save();
+                break;
+            case 'next-cm':
+                $liveVoting->getPlayer()->nextQuestionCM();
+                break;
             default:
                 $return_value = false;
                 break;
@@ -1265,7 +1382,18 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
     {
         $player = $this->object->getLiveVoting()->getPlayer();
 
-        LiveVotingJs::sendResponse(vsprintf($this->plugin->txt("start_online"), [LiveVotingVoter::countVoters($player->getId())]));
+        LiveVotingJs::sendResponse([
+            "count" => vsprintf($this->plugin->txt("start_online"), [LiveVotingVoter::countVoters($player->getId())]),
+            "nicknames" => LiveVotingVoter::getVotersNicknames($player->getId())
+        ]);
+    }
+
+    public function removeVoter() {
+        $user_identifier = $_POST['player'];
+
+        $player_id = $this->object->getLiveVoting()->getPlayer()->getId();
+
+        LiveVotingVoter::removeVoter($player_id, $user_identifier);
     }
 
     /**
@@ -1314,5 +1442,36 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
         }
 
         parent::_goto($a_target);
+    }
+
+    protected function initCreateForm(string $new_type): ilPropertyFormGUI
+    {
+        $form = parent::initCreateForm($new_type);
+
+        $mode = new ilRadioGroupInputGUI($this->plugin->txt('xlvo_mode'), 'xlvo_mode');
+        $mode->addOption(new ilRadioOption($this->plugin->txt('xlvo_mode_basic'), (string) LiveVotingMode::BASIC_MODE, $this->plugin->txt('xlvo_mode_basic_info')));
+        $mode->addOption(new ilRadioOption($this->plugin->txt('xlvo_mode_challenge'), (string) LiveVotingMode::CHALLENGE_MODE, $this->plugin->txt('xlvo_mode_challenge_info')));
+
+        $mode->setValue((string) LiveVotingMode::BASIC_MODE);
+        $mode->setRequired(true);
+
+        $form->addItem($mode);
+
+        return $form;
+    }
+
+    /**
+     * @throws LiveVotingException
+     */
+    protected function afterSave(ilObject $new_object): void
+    {
+        $form = $this->initCreateForm("xlvo");
+
+        if ($form->checkInput()) {
+            $new_object->getLiveVoting()->setMode(LiveVotingMode::new((int)$form->getInput("xlvo_mode")));
+            $new_object->getLiveVoting()->save();
+        }
+
+        parent::afterSave($new_object);
     }
 }
