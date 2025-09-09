@@ -129,10 +129,12 @@ class LiveVotingChoicesUI
                 return "xlvoForms.initMultipleInputs('" . $id . "');";
             })
                 ->withValue(isset($options) ? str_replace('"', "\'", json_encode(array_map(function ($option) {
+                    // START TEMP PATCH HSLU: Hack to suppress accidental removal of LiveVoting latex variables in braces
                     return [
-                        "text" => $option->getText(),
+                        "text" => str_replace("}","&rbrace;",str_replace("{","&lbrace;",$option->getText())),
                         "id" => $option->getId()
                     ];
+                    // END TEMP PATCH HSLU: Hack to suppress accidental removal of LiveVoting latex variables in braces
                 }, $options), JSON_UNESCAPED_UNICODE)) : "");
 
             $section_answers = $this->factory->input()->field()->section($form_answers, $this->plugin->txt("qtype_form_header"), "");
