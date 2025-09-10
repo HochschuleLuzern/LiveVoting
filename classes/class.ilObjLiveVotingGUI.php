@@ -894,20 +894,21 @@ class ilObjLiveVotingGUI extends ilObjectPluginGUI
             {
                 global $DIC;
 
-                $childs = $DIC->repositoryTree()->getChilds($record["ref_id"]);
+                // START TEMP PATCH HSLU: get children based on array of types to prevent Allowed memory size exhausted failure
+                $types = array("cat","catr","crs","crsr","fold","sess","grp","grpr","itgr","book","xlvo");
+
+                $childs = $DIC->repositoryTree()->getChildsByTypeFilter($record["ref_id"], $types);
 
                 $result = [];
 
                 foreach ($childs as $child) {
-                    if (($child["type"] == ilLiveVotingPlugin::PLUGIN_ID || count($DIC->repositoryTree()->getChilds((int) $child["ref_id"])) > 0) && $child["type"] != "adm") {
-                        $result[] = [
+                         $result[] = [
                             "ref_id" => (int) $child["ref_id"],
                             "title" => $child["title"],
                             "livevoting" => $child["type"] == ilLiveVotingPlugin::PLUGIN_ID
                         ];
-                    }
                 }
-
+                // END TEMP PATCH HSLU: get children based on array of types to prevent Allowed memory size exhausted failure
                 return $result;
             }
 
