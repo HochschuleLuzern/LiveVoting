@@ -101,10 +101,12 @@ class LiveVotingChoicesUI
                 ->withValue(isset($this->question) ? $this->question->getTitle() : "")
                 ->withRequired(true);
 
+            // START TEMP PATCH HSLU: Hack to suppress accidental removal of LiveVoting latex variables in braces
             $form_questions["question"] = $this->factory->input()->field()->textarea(
                 $this->plugin->txt('voting_question'))
-                ->withValue(isset($this->question) ? ilRTE::_replaceMediaObjectImageSrc($this->question->getQuestion(), 1) : "")
+                ->withValue(isset($this->question) ? str_replace("}","&rbrace;",str_replace("{","&lbrace;",ilRTE::_replaceMediaObjectImageSrc($this->question->getQuestion(), 1)))  : "")
                 ->withRequired(true);
+            // END TEMP PATCH HSLU: Hack to suppress accidental removal of LiveVoting latex variables in braces
 
             $form_questions["columns"] = $this->factory->input()->field()->select(
                 $this->plugin->txt('voting_columns'),
