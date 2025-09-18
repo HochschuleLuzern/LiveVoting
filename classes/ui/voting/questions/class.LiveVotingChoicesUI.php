@@ -39,6 +39,7 @@ use ilTextAreaInputGUI;
 use LiveVoting\platform\LiveVotingException;
 use LiveVoting\questions\LiveVotingQuestion;
 use LiveVoting\questions\LiveVotingQuestionOption;
+use LiveVoting\Utils\LiveVotingUtils;
 
 /**
  * Class LiveVotingChoicesUI
@@ -101,12 +102,10 @@ class LiveVotingChoicesUI
                 ->withValue(isset($this->question) ? $this->question->getTitle() : "")
                 ->withRequired(true);
 
-            // START TEMP PATCH HSLU: Hack to suppress accidental removal of LiveVoting latex variables in braces
             $form_questions["question"] = $this->factory->input()->field()->textarea(
                 $this->plugin->txt('voting_question'))
-                ->withValue(isset($this->question) ? str_replace("}","&rbrace;",str_replace("{","&lbrace;",ilRTE::_replaceMediaObjectImageSrc($this->question->getQuestion(), 1)))  : "")
+                ->withValue(isset($this->question) ? ilRTE::_replaceMediaObjectImageSrc(LiveVotingUtils::_solveKeyBracketsBug($this->question->getQuestion()), 1) : "")
                 ->withRequired(true);
-            // END TEMP PATCH HSLU: Hack to suppress accidental removal of LiveVoting latex variables in braces
 
             $form_questions["columns"] = $this->factory->input()->field()->select(
                 $this->plugin->txt('voting_columns'),
@@ -131,12 +130,10 @@ class LiveVotingChoicesUI
                 return "xlvoForms.initMultipleInputs('" . $id . "');";
             })
                 ->withValue(isset($options) ? str_replace('"', "\'", json_encode(array_map(function ($option) {
-                    // START TEMP PATCH HSLU: Hack to suppress accidental removal of LiveVoting latex variables in braces
                     return [
-                        "text" => str_replace("}","&rbrace;",str_replace("{","&lbrace;",$option->getText())),
+                        "text" => $option->getText(),
                         "id" => $option->getId()
                     ];
-                    // END TEMP PATCH HSLU: Hack to suppress accidental removal of LiveVoting latex variables in braces
                 }, $options), JSON_UNESCAPED_UNICODE)) : "");
 
             $section_answers = $this->factory->input()->field()->section($form_answers, $this->plugin->txt("qtype_form_header"), "");
